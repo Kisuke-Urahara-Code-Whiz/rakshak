@@ -1,0 +1,15 @@
+# Virtual environment
+venv/
+Include/
+Lib/
+Scripts/
+share/
+__pycache__/
+
+# Environment secrets
+.env
+.cfg
+.sqlite
+
+#files
+app.py
