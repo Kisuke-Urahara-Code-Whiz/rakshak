@@ -1,0 +1,4 @@
+authorities:
+  host: localhost
+  port: 8081
+  url: http://${authorities.host}:${authorities.port}
