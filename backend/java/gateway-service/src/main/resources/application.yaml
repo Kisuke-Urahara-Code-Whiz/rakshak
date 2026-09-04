@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: gateway-service
+  profiles:
+    active: dev
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          routes:
+            - id: media-service
+              uri: lb://MEDIA-SERVICE
+              predicates:
+                - Path=/media/**
+              filters:
+                - StripPrefix=1
+
+            - id: sms-test-service
+              uri: lb://SMS-TEST-SERVICE
+              predicates:
+                - Path=/sms-test/**
+              filters:
+                - StripPrefix=1
+
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    registry-fetch-interval-seconds: 10
+  instance:
+    lease-expiration-duration-in-seconds: 30
+    lease-renewal-interval-in-seconds: 10

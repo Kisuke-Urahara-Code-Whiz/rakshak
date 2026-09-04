@@ -8,9 +8,9 @@
 		<version>0.0.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-	<artifactId>media-service</artifactId>
-	<name>media-service</name>
-	<description>SIH-PS-1-Media-Service</description>
+	<artifactId>sms-test-service</artifactId>
+	<name>sms-test-service</name>
+	<description>SIH-PS-1-SMS-Test-Service</description>
 
 	<dependencies>
 		<dependency>
@@ -38,7 +38,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>media-service</finalName>
+		<finalName>sms-test-service</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

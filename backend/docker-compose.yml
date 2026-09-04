@@ -1,0 +1,109 @@
+services:
+
+  gateway-service:
+    image: sih-gateway-service:1.0.2
+    container_name: gateway-service
+    build: ./java/gateway-service
+
+    ports:
+      - "5001:5001"
+
+    restart: unless-stopped
+
+    environment:
+      EUREKA_SERVER_HOST: discovery-service
+      EUREKA_SERVER_PORT: 5000
+      SPRING_PROFILES_ACTIVE: docker
+
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      media-service:
+        condition: service_healthy
+      sms-test-service:
+        condition: service_healthy
+
+    networks:
+      - sih-network
+
+
+  discovery-service:
+    image: sih-discovery-service:1.0.0
+    container_name: discovery-service
+    build: ./java/discovery-service
+
+    ports:
+      - "5000:5000"
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+    networks:
+      - sih-network
+
+  media-service:
+    image: sih-media-service:1.0.1
+    container_name: media-service
+    build: ./java/media-service
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+    environment:
+      EUREKA_SERVER_HOST: discovery-service
+      EUREKA_SERVER_PORT: 5000
+      SPRING_PROFILES_ACTIVE: docker
+
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+
+    networks:
+      - sih-network
+
+  sms-test-service:
+    image: sms-test-service:1.0.0
+    container_name: sms-test-service
+    build: ./java/sms-test-service
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+    environment:
+      EUREKA_SERVER_HOST: discovery-service
+      EUREKA_SERVER_PORT: 5000
+      SPRING_PROFILES_ACTIVE: docker
+      SMS_DEVICE_IP: ${SMS_DEVICE_IP}
+      SMS_DEVICE_PORT: ${SMS_DEVICE_PORT}
+      SMS_DEVICE_USERNAME: ${SMS_DEVICE_USERNAME}
+      SMS_DEVICE_PASSWORD: ${SMS_DEVICE_PASSWORD}
+
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+
+    networks:
+      - sih-network
+
+networks:
+  sih-network:
+    driver: bridge
+

@@ -1,7 +1,36 @@
-media()(
-	cd ../java/media-service
-	mvn clean package -DskipTests
-)
+#!/usr/bin/env bash
 
-media
+set -e
+
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+build_service() {
+    local name="$1"
+    local dir="$2"
+
+    echo
+    echo "========================================"
+    echo " Building $name"
+    echo "========================================"
+
+    cd "$BASE_DIR/$dir"
+    mvn clean package -DskipTests
+
+    echo "✓ $name built successfully"
+}
+
+build_service "DISCOVERY-SERVICE" "../java/discovery-service"
+build_service "GATEWAY-SERVICE" "../java/gateway-service"
+build_service "MEDIA-SERVICE" "../java/media-service"
+build_service "SMS-TEST-SERVICE" "../java/sms-test-service"
+
+echo
+echo "========================================"
+echo " Starting Docker Compose"
+echo "========================================"
+
+cd "$BASE_DIR"
 docker compose up -d
+
+echo
+echo "✓ All services started"

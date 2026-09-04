@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: sms-test-service
+  profiles:
+    active: dev
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: 5000
+
+sms:
+  device:
+    ip: "<device_local_ip>"
+    port: 8080
+    username: "<username>"
+    password: "<password>"
+    default-message: "This is an Automated Message from Team Lead for SIH SMS Testing"
+    default-phone-numbers:
+      - "+918159073507"
+      - "+916289645167"
+      - "+916290289863"
+      - "+918337049905"
+      - "+917477349159"
+      - "+917439407308"

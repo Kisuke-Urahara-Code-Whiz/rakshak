@@ -10,7 +10,6 @@ import java.io.IOException;
 import sih.media_service.service.MediaForwardingService;
 
 @RestController
-@RequestMapping("/api/media")
 public class MediaUploadController {
 
     private final MediaForwardingService forwardingService;
