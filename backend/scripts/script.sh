@@ -23,6 +23,8 @@ build_service "DISCOVERY-SERVICE" "../java/discovery-service"
 build_service "GATEWAY-SERVICE" "../java/gateway-service"
 build_service "MEDIA-SERVICE" "../java/media-service"
 build_service "SMS-TEST-SERVICE" "../java/sms-test-service"
+build_service "ROOM-SERVICE" "../java/room-service"
+build_service "SMS-SERVICE" "../java/sms-service"
 
 echo
 echo "========================================"

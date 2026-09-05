@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: sms-service
+  profiles:
+    active: dev
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: 5000
+
+sms:
+  device:
+    ip: "<device_local_ip>"
+    port: 8080
+    username: "<username>"
+    password: "<password>"

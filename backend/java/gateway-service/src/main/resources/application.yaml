@@ -27,6 +27,20 @@ spring:
               filters:
                 - StripPrefix=1
 
+            - id: room-service
+              uri: lb://ROOM-SERVICE
+              predicates:
+                - Path=/room/**
+              filters:
+                - StripPrefix=1
+
+            - id: sms-service
+              uri: lb://SMS-SERVICE
+              predicates:
+                - Path=/sms/**
+              filters:
+                - StripPrefix=1
+
 eureka:
   client:
     fetch-registry: true

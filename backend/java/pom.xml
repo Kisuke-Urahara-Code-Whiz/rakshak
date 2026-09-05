@@ -30,6 +30,8 @@
         <module>gateway-service</module>
         <module>media-service</module>
         <module>sms-test-service</module>
+        <module>room-service</module>
+        <module>sms-service</module>
     </modules>
 
     <dependencyManagement>
