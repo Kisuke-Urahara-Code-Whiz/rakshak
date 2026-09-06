@@ -1,7 +1,7 @@
 services:
 
   gateway-service:
-    image: sih-gateway-service:1.0.5
+    image: sih-gateway-service:2.0.0
     container_name: gateway-service
     build: ./java/gateway-service
 
@@ -22,7 +22,7 @@ services:
         condition: service_healthy
       sms-test-service:
         condition: service_healthy
-      room-service:
+      sql-service:
         condition: service_healthy
       sms-service:
         condition: service_healthy
@@ -77,10 +77,10 @@ services:
     networks:
       - sih-network
 
-  room-service:
-    image: sih-room-service:1.0.5
-    container_name: room-service
-    build: ./java/room-service
+  sql-service:
+    image: sih-sql-service:1.0.5
+    container_name: sql-service
+    build: ./java/sql-service
 
     restart: unless-stopped
 
@@ -96,8 +96,27 @@ services:
       EUREKA_SERVER_PORT: 5000
       SPRING_PROFILES_ACTIVE: docker
 
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+      RABBITMQ_QUEUE_LOCATION: ${QUEUE}
+      RABBITMQ_EXCHANGE_NAME: ${EXCHANGE_KEY}
+      RABBITMQ_ROUTING_LOCATION: ${ROUTING_KEY}
+
     depends_on:
       discovery-service:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
     networks:
@@ -134,7 +153,7 @@ services:
       - sih-network
 
   sms-service:
-    image: sms-service:1.0.0
+    image: sms-service:1.0.2
     container_name: sms-service
     build: ./java/sms-service
 
@@ -159,13 +178,61 @@ services:
     depends_on:
       discovery-service:
         condition: service_healthy
-      room-service:
+      sql-service:
         condition: service_healthy
 
     networks:
       - sih-network
 
+  postgres:
+    image: postgres:15.18
+    container_name: postgres
+    restart: unless-stopped
+
+    ports:
+      - "9000:5432"
+
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - sih-network
+
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rmq-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sih-network
+
+
 networks:
   sih-network:
     driver: bridge
+
+volumes:
+  postgres_data:
 

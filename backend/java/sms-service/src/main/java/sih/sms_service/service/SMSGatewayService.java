@@ -27,7 +27,7 @@ public class SMSGatewayService {
     public ResponseEntity<String> sendSms() {
 
         List<String> numbers = smsClientService.getNumbers();
-        String message = "HEAVY ENVIRONMENTAL RISK IN YOUR ZONE";
+        String message = "HEAVY ENVIRONMENTAL RISK IN YOUR ZONE. PLEASE MOVE TOWARDS HIGHER GROUND ADN PREVENT FROM STAYING ON LOW LEVEL GROUNDS";
         SMSPayload payload = new SMSPayload(new TextMessage(message), numbers);
 
         return restClient.post()

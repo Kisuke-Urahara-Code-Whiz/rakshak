@@ -27,10 +27,10 @@ spring:
               filters:
                 - StripPrefix=1
 
-            - id: room-service
-              uri: lb://ROOM-SERVICE
+            - id: sql-service
+              uri: lb://SQL-SERVICE
               predicates:
-                - Path=/room/**
+                - Path=/sql/**
               filters:
                 - StripPrefix=1
 
