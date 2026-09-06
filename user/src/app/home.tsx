@@ -1,26 +1,81 @@
 import { useAppStore } from '@/stores/useAppStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-    AudioModule,
-    RecordingPresets,
-    useAudioPlayer,
-    useAudioPlayerStatus,
-    useAudioRecorder,
+  AudioModule,
+  RecordingPresets,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  useAudioRecorder,
 } from 'expo-audio';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const API_HOST = 'https://7706-152-58-181-7.ngrok-free.app';
+
+function getFormattedDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const date = `${year}-${month}-${day}`;
+
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const time = `${hours}:${minutes}:${seconds}`;
+
+  const lastUpdatedAt = `${date} ${time}`;
+
+  return { date, time, lastUpdatedAt };
+}
+
+function getFileExtension(uri: string | null, defaultExt: string): string {
+  if (!uri) return defaultExt.toUpperCase();
+  const parts = uri.split('.');
+  if (parts.length > 1) {
+    const ext = parts.pop()?.split('?')[0]?.split('#')[0];
+    if (ext && ext.length <= 5) {
+      return ext.toUpperCase();
+    }
+  }
+  return defaultExt.toUpperCase();
+}
+
+function getMimeType(extension: string): string {
+  switch (extension.toUpperCase()) {
+    case 'PNG':
+      return 'image/png';
+    case 'JPG':
+    case 'JPEG':
+      return 'image/jpeg';
+    case 'MP4':
+      return 'video/mp4';
+    case 'M4A':
+      return 'audio/m4a';
+    case 'AAC':
+      return 'audio/aac';
+    case 'MP3':
+      return 'audio/mpeg';
+    case 'WAV':
+      return 'audio/wav';
+    default:
+      return 'application/octet-stream';
+  }
+}
 
 export default function HomeScreen() {
   const {
@@ -38,51 +93,101 @@ export default function HomeScreen() {
 
   const [locating, setLocating] = useState(false);
 
-  // Audio Recorder & Dedicated Player Hook
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [isRecording, setIsRecording] = useState(false);
 
-  // Hook-based Audio Player for the recorded memo
   const player = useAudioPlayer(voiceUri);
   const playerStatus = useAudioPlayerStatus(player);
 
-  // Transmission Loading States
   const [isSendingPhoto, setIsSendingPhoto] = useState(false);
   const [isSendingAudio, setIsSendingAudio] = useState(false);
 
-  useEffect(() => {
-    fetchCurrentLocation();
-  }, []);
-
-  if (!hasHydrated) return null;
-  if (!phoneNumber) return <Redirect href={'/' as any} />;
-
-  // 1. Spatial GPS Fetcher
-  async function fetchCurrentLocation() {
+  async function fetchFreshCoordinates(): Promise<{ latitude: number; longitude: number } | null> {
     try {
-      setLocating(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'GPS access is required for real-time risk assessment.');
-        setLocating(false);
-        return;
+        return null;
       }
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
+
+      const coords = {
+        latitude: Number(loc.coords.latitude.toFixed(6)),
+        longitude: Number(loc.coords.longitude.toFixed(6)),
+      };
+
       setLocation({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
         accuracy: loc.coords.accuracy,
       });
+
+      return coords;
     } catch {
-      Alert.alert('GPS Error', 'Failed to acquire location fix.');
-    } finally {
-      setLocating(false);
+      Alert.alert('GPS Error', 'Failed to acquire fresh spatial fix.');
+      return null;
     }
   }
 
-  // 2. Camera Capture Handler
+  async function sendHeartbeatTelemetry() {
+    if (!phoneNumber) return;
+    const coords = await fetchFreshCoordinates();
+    if (!coords) return;
+
+    try {
+      const { lastUpdatedAt } = getFormattedDateTime();
+      const payload = {
+        number: Number(phoneNumber),
+        lat: coords.latitude,
+        lon: coords.longitude,
+        lastUpdatedAt: lastUpdatedAt,
+      };
+
+      await fetch(`${API_HOST}/sql/enter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (e) {
+      console.warn('Periodic telemetry ping failed:', e);
+    }
+  }
+
+  useEffect(() => {
+    if (!location) {
+      fetchFreshCoordinates();
+    }
+
+    const intervalTimer = setInterval(() => {
+      sendHeartbeatTelemetry();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalTimer);
+  }, [phoneNumber]);
+
+  if (!hasHydrated) return null;
+  if (!phoneNumber) return <Redirect href={'/' as any} />;
+
+  async function handleExit() {
+    try {
+      logout();
+      await AsyncStorage.clear();
+    } catch (e) {
+      console.warn('Error purging local storage cache:', e);
+    }
+  }
+
+  async function handleManualGpsRefresh() {
+    setLocating(true);
+    await fetchFreshCoordinates();
+    setLocating(false);
+  }
+
   async function handleCapturePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -90,6 +195,7 @@ export default function HomeScreen() {
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images', 'videos'],
       allowsEditing: true,
       quality: 0.7,
     });
@@ -98,7 +204,6 @@ export default function HomeScreen() {
     }
   }
 
-  // 3. Audio Recording & Playback Handlers
   async function startRecording() {
     try {
       if (playerStatus.playing) {
@@ -111,7 +216,6 @@ export default function HomeScreen() {
         return;
       }
 
-      // Switch audio session to recording mode
       await AudioModule.setAudioModeAsync({
         allowsRecording: true,
         playsInSilentMode: true,
@@ -130,7 +234,6 @@ export default function HomeScreen() {
       await audioRecorder.stop();
       setIsRecording(false);
 
-      // Return audio session to playback mode so the loudspeaker works
       await AudioModule.setAudioModeAsync({
         allowsRecording: false,
         playsInSilentMode: true,
@@ -151,7 +254,6 @@ export default function HomeScreen() {
       if (playerStatus.playing) {
         player.pause();
       } else {
-        // If it previously reached the end, rewind to start
         if (
           playerStatus.currentTime &&
           playerStatus.duration &&
@@ -166,19 +268,57 @@ export default function HomeScreen() {
     }
   }
 
-  // 4. Send Handlers (Resets evidence after submission)
   async function handleSendPhoto() {
     if (!photoUri) return;
     setIsSendingPhoto(true);
 
-    setTimeout(() => {
-      setIsSendingPhoto(false);
-      setPhotoUri(null); // Clear image preview upon successful transmission
-      Alert.alert(
-        'Visual Evidence Transmitted',
-        'Incident photograph has been successfully uploaded to the Disaster Management Node.'
+    try {
+      const coords = await fetchFreshCoordinates();
+      if (!coords) {
+        setIsSendingPhoto(false);
+        return;
+      }
+
+      const { date, time } = getFormattedDateTime();
+      const detectedExt = getFileExtension(photoUri, 'PNG');
+      const mimeType = getMimeType(detectedExt);
+
+      const response = await FileSystem.uploadAsync(
+        `${API_HOST}/media/upload`,
+        photoUri,
+        {
+          fieldName: 'file',
+          httpMethod: 'POST',
+          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+          mimeType: mimeType,
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+          },
+          parameters: {
+            number: String(phoneNumber),
+            fileType: detectedExt,
+            date: date,
+            lat: String(coords.latitude),
+            lon: String(coords.longitude),
+            time: time,
+          },
+        }
       );
-    }, 1200);
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
+
+      setPhotoUri(null);
+      Alert.alert(
+        'Evidence Transmitted',
+        `Incident file [${detectedExt}] uploaded successfully to /media/upload.`
+      );
+    } catch (err: any) {
+      Alert.alert('Transmission Failed', err.message || 'Network error encountered during upload.');
+    } finally {
+      setIsSendingPhoto(false);
+    }
   }
 
   async function handleSendAudio() {
@@ -189,17 +329,55 @@ export default function HomeScreen() {
       player.pause();
     }
 
-    setTimeout(() => {
-      setIsSendingAudio(false);
-      setVoiceUri(null); // Clear audio memo upon successful transmission
+    try {
+      const coords = await fetchFreshCoordinates();
+      if (!coords) {
+        setIsSendingAudio(false);
+        return;
+      }
+
+      const { date, time } = getFormattedDateTime();
+      const detectedExt = getFileExtension(voiceUri, 'M4A');
+      const mimeType = getMimeType(detectedExt);
+
+      const response = await FileSystem.uploadAsync(
+        `${API_HOST}/media/upload`,
+        voiceUri,
+        {
+          fieldName: 'file',
+          httpMethod: 'POST',
+          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+          mimeType: mimeType,
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+          },
+          parameters: {
+            number: String(phoneNumber),
+            fileType: detectedExt,
+            date: date,
+            lat: String(coords.latitude),
+            lon: String(coords.longitude),
+            time: time,
+          },
+        }
+      );
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
+
+      setVoiceUri(null);
       Alert.alert(
         'Voice Memo Dispatched',
-        'Audio briefing has been forwarded to the State Emergency Operations Center.'
+        `Audio telemetry [${detectedExt}] uploaded successfully to /media/upload.`
       );
-    }, 1200);
+    } catch (err: any) {
+      Alert.alert('Transmission Failed', err.message || 'Network error encountered during upload.');
+    } finally {
+      setIsSendingAudio(false);
+    }
   }
 
-  // 5. Risk Tier Styling
   function getRiskParameters(score: number) {
     if (score >= 70) {
       return {
@@ -257,7 +435,7 @@ export default function HomeScreen() {
             <Text className="text-blue-200 text-[11px] font-mono">+91 {phoneNumber}</Text>
           </View>
           <TouchableOpacity
-            onPress={logout}
+            onPress={handleExit}
             className="bg-red-700 px-2.5 py-1 rounded active:opacity-80"
           >
             <Text className="text-white text-[11px] font-bold">Exit</Text>
@@ -294,7 +472,7 @@ export default function HomeScreen() {
               Spatial Coordinates
             </Text>
             <TouchableOpacity
-              onPress={fetchCurrentLocation}
+              onPress={handleManualGpsRefresh}
               disabled={locating}
               className="bg-blue-50 px-2.5 py-1 rounded border border-blue-200 active:opacity-70"
             >
@@ -333,13 +511,13 @@ export default function HomeScreen() {
             Hazard Documentation (Field Uploads)
           </Text>
 
-          {/* Photo Section */}
+          {/* Visual Evidence Section */}
           <View className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mb-4">
             <View className="flex-row items-center justify-between mb-2">
               <View>
                 <Text className="text-xs font-bold text-slate-800">Visual Evidence</Text>
                 <Text className="text-[11px] text-slate-500">
-                  {photoUri ? 'Captured snapshot attached' : 'No field snapshot captured'}
+                  {photoUri ? `Asset attached [${getFileExtension(photoUri, 'PNG')}]` : 'No field snapshot captured'}
                 </Text>
               </View>
               <TouchableOpacity
@@ -347,7 +525,7 @@ export default function HomeScreen() {
                 className="bg-[#002b53] px-3.5 py-1.5 rounded active:opacity-80"
               >
                 <Text className="text-white text-xs font-semibold">
-                  {photoUri ? 'Retake Photo' : 'Open Camera'}
+                  {photoUri ? 'Retake Media' : 'Open Camera'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -367,7 +545,7 @@ export default function HomeScreen() {
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
                     <Text className="text-white text-xs font-bold uppercase tracking-wider">
-                      Transmit Visual Evidence
+                      Transmit Visual Evidence ({getFileExtension(photoUri, 'PNG')})
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -384,7 +562,7 @@ export default function HomeScreen() {
                   {isRecording
                     ? 'Recording audio stream...'
                     : voiceUri
-                    ? 'Audio memo ready for review'
+                    ? `Audio ready [${getFileExtension(voiceUri, 'M4A')}]`
                     : 'No voice briefing recorded'}
                 </Text>
               </View>
@@ -403,7 +581,6 @@ export default function HomeScreen() {
 
             {voiceUri && !isRecording && (
               <View className="mt-3 pt-3 border-t border-slate-200">
-                {/* Audio Preview Controls */}
                 <View className="flex-row items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2 mb-3">
                   <View className="flex-row items-center gap-2">
                     <View
@@ -412,7 +589,7 @@ export default function HomeScreen() {
                       }`}
                     />
                     <Text className="text-xs font-medium text-slate-700">
-                      {playerStatus.playing ? 'Playing memo...' : 'Recorded Audio Memo'}
+                      {playerStatus.playing ? 'Playing memo...' : `Recorded Memo (${getFileExtension(voiceUri, 'M4A')})`}
                     </Text>
                   </View>
 
@@ -426,7 +603,6 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Send Button */}
                 <TouchableOpacity
                   onPress={handleSendAudio}
                   disabled={isSendingAudio}
@@ -436,7 +612,7 @@ export default function HomeScreen() {
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
                     <Text className="text-white text-xs font-bold uppercase tracking-wider">
-                      Transmit Voice Memo
+                      Transmit Voice Memo ({getFileExtension(voiceUri, 'M4A')})
                     </Text>
                   )}
                 </TouchableOpacity>

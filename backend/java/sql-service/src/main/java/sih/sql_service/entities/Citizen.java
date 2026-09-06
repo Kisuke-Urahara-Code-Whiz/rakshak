@@ -6,6 +6,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Setter
 @Getter
 @Entity
@@ -25,5 +27,6 @@ public class Citizen {
     @Column(name = "long", nullable = false)
     private Double longitude;
 
-
+    @Column(name = "last_updated_at")
+    private LocalDateTime lastUpdatedAt;
 }

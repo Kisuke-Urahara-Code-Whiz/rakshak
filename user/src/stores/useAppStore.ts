@@ -42,8 +42,8 @@ export const useAppStore = create<AppState>()(
       setIsLoading: (loading) => set({ isLoading: loading }),
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
-      // Set default number to bypass the login screen
-      phoneNumber: '9876543210', 
+      // Restored back to default null
+      phoneNumber: null,
       setPhoneNumber: (phone) => set({ phoneNumber: phone }),
 
       location: null,
@@ -68,7 +68,7 @@ export const useAppStore = create<AppState>()(
         }),
     }),
     {
-      name: 'rakshak-app-storage',
+      name: 'rakshak-app-storage-v1', // Bumped key to purge the cached mock phone number
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         phoneNumber: state.phoneNumber,

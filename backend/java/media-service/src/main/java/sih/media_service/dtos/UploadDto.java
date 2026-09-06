@@ -1,4 +1,4 @@
-package sih.sql_service.dtos;
+package sih.media_service.dtos;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;

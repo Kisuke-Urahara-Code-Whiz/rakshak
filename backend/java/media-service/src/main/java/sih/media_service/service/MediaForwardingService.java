@@ -1,44 +1,37 @@
 package sih.media_service.service;
 
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.MediaType;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
+import sih.media_service.dtos.FileUploadRequestDto;
+import sih.media_service.dtos.UploadDto;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class MediaForwardingService {
 
-    private final RestClient externalServiceClient;
+    private final SqlServiceClient sqlServiceClient;
 
-    public MediaForwardingService(RestClient externalServiceClient) {
-        this.externalServiceClient = externalServiceClient;
-    }
+    public ResponseEntity<String> processAndForward(FileUploadRequestDto requestDto) {
 
-    public ResponseEntity<String> forwardMedia(String endpointPath, MultipartFile file, Double lat, Double lon) throws IOException {
+        UploadDto sqlDto = UploadDto.builder()
+                .number(requestDto.getNumber())
+                .fileType(requestDto.getFileType())
+                .date(requestDto.getDate())
+                .lat(requestDto.getLat())
+                .lon(requestDto.getLon())
+                .time(requestDto.getTime())
+                .build();
 
-        ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
-            @Override
-            public String getFilename() {
-                return file.getOriginalFilename();
-            }
-        };
-
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", fileResource);
-        body.add("latitude", lat);
-        body.add("longitude", lon);
-
-        return externalServiceClient.post()
-                .uri(endpointPath)
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(body)
-                .retrieve()
-                .toEntity(String.class);
-
+        try {
+            String sqlResponse = sqlServiceClient.saveUploadRecord(sqlDto);
+            log.info("Persisted metadata to sql-service: {}", sqlResponse);
+            return ResponseEntity.ok("Metadata persisted successfully: " + sqlResponse);
+        } catch (Exception ex) {
+            log.error("Failed to persist upload metadata via sql-service Feign: {}", ex.getMessage());
+            throw new RuntimeException("Database metadata persistence failed", ex);
+        }
     }
 }

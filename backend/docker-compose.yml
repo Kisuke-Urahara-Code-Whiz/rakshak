@@ -52,7 +52,7 @@ services:
       - sih-network
 
   media-service:
-    image: sih-media-service:1.0.1
+    image: sih-media-service:1.0.17
     container_name: media-service
     build: ./java/media-service
 
@@ -78,7 +78,7 @@ services:
       - sih-network
 
   sql-service:
-    image: sih-sql-service:1.0.5
+    image: sih-sql-service:1.0.10
     container_name: sql-service
     build: ./java/sql-service
 
