@@ -1,7 +1,5 @@
+import { API_BASE_URL } from '@/configs/env';
 import * as FileSystem from 'expo-file-system/legacy';
-
-const NGROK_HOST = process.env.EXPO_PUBLIC_NGROK_HOST ?? '7706-152-58-181-7.ngrok-free.app';
-const API_HOST = `https://${NGROK_HOST}`;
 
 export function getFormattedDateTime() {
   const now = new Date();
@@ -30,20 +28,29 @@ export function getFileExtension(uri: string | null, defaultExt: string): string
 
 export function getMimeType(extension: string): string {
   switch (extension.toUpperCase()) {
-    case 'PNG': return 'image/png';
+    case 'PNG':
+      return 'image/png';
     case 'JPG':
-    case 'JPEG': return 'image/jpeg';
-    case 'MP4': return 'video/mp4';
-    case 'M4A': return 'audio/m4a';
-    case 'AAC': return 'audio/aac';
-    case 'MP3': return 'audio/mpeg';
-    case 'WAV': return 'audio/wav';
-    default: return 'application/octet-stream';
+    case 'JPEG':
+      return 'image/jpeg';
+    case 'MP4':
+      return 'video/mp4';
+    case 'M4A':
+      return 'audio/m4a';
+    case 'AAC':
+      return 'audio/aac';
+    case 'MP3':
+      return 'audio/mpeg';
+    case 'WAV':
+      return 'audio/wav';
+    default:
+      return 'application/octet-stream';
   }
 }
 
 export async function sendHeartbeat(number: string, lat: number, lon: number, lastUpdatedAt: string) {
-  return fetch(`${API_HOST}/sql/enter`, {
+  console.log('Sending heartbeat to URL:', `${API_BASE_URL}/sql/enter`);
+  return fetch(`${API_BASE_URL}/sql/enter`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -62,7 +69,7 @@ export async function uploadMediaEvidence(
   const { date, time } = getFormattedDateTime();
   const mimeType = getMimeType(fileType);
 
-  return FileSystem.uploadAsync(`${API_HOST}/media/upload`, fileUri, {
+  return FileSystem.uploadAsync(`${API_BASE_URL}/media/upload`, fileUri, {
     fieldName: 'file',
     httpMethod: 'POST',
     uploadType: FileSystem.FileSystemUploadType.MULTIPART,

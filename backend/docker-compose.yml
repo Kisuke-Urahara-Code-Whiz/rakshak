@@ -1,7 +1,7 @@
 services:
 
   gateway-service:
-    image: sih-gateway-service:2.0.0
+    image: sih-gateway-service:2.0.5
     container_name: gateway-service
     build: ./java/gateway-service
 
@@ -80,7 +80,7 @@ services:
       - sih-network
 
   room-service:
-    image: sih-room-service:1.0.20
+    image: sih-room-service:1.0.25
     container_name: room-service
     build: ./java/room-service
 

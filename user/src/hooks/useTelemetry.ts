@@ -48,9 +48,34 @@ export function useTelemetry() {
   }, [phoneNumber]);
 
   const handleManualGpsRefresh = async () => {
+    if (!phoneNumber) {
+      Alert.alert('Error', 'No authenticated phone number found.');
+      return;
+    }
+
+    if (!location) {
+      Alert.alert('No Fix', 'No cached coordinates available to transmit.');
+      return;
+    }
+
     setLocating(true);
-    await fetchFreshCoordinates();
-    setLocating(false);
+    try {
+      const { lastUpdatedAt } = getFormattedDateTime();
+      const res = await sendHeartbeat(
+        phoneNumber,
+        location.latitude,
+        location.longitude,
+        lastUpdatedAt
+      );
+
+      if (res.status < 200 || res.status >= 300) {
+        throw new Error(`Server returned status: ${res.status}`);
+      }
+    } catch (e: any) {
+      Alert.alert('Transmission Failed', e.message || 'Unable to reach the server.');
+    } finally {
+      setLocating(false);
+    }
   };
 
   return { locating, fetchFreshCoordinates, handleManualGpsRefresh };

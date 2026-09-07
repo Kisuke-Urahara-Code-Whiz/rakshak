@@ -1,4 +1,5 @@
 import { CoordinatesCard } from '@/components/CoordinatesCard';
+import { CriticalAdvisoryCard } from '@/components/CriticalAdvisoryCard';
 import { Header } from '@/components/Header';
 import { VisualEvidenceCard } from '@/components/VisualEvidenceCard';
 import { VoiceMemoCard } from '@/components/VoiceMemoCard';
@@ -14,9 +15,8 @@ import { Alert, ScrollView, StatusBar, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
-
   useRiskWebSocket();
-  
+
   const {
     phoneNumber,
     location,
@@ -90,6 +90,10 @@ export default function HomeScreen() {
 
       <ScrollView className="flex-1 px-4 py-4" contentContainerStyle={{ paddingBottom: 50 }}>
         <VulnerabilityCard riskScore={riskScore} />
+
+        {/* Displayed conditionally when riskScore >= 70 */}
+        <CriticalAdvisoryCard riskScore={riskScore} />
+
         <CoordinatesCard location={location} locating={locating} onRefresh={handleManualGpsRefresh} />
 
         <View className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">

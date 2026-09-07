@@ -18,7 +18,7 @@ export function CoordinatesCard({ location, locating, onRefresh }: CoordinatesCa
           className="bg-blue-50 px-2.5 py-1 rounded border border-blue-200 active:opacity-70"
         >
           <Text className="text-[#002b53] text-[11px] font-bold">
-            {locating ? 'Acquiring...' : 'Refresh GPS'}
+            {locating ? 'Transmitting...' : 'Refresh GPS'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -26,7 +26,7 @@ export function CoordinatesCard({ location, locating, onRefresh }: CoordinatesCa
       {locating ? (
         <View className="py-4 items-center">
           <ActivityIndicator size="small" color="#002b53" />
-          <Text className="text-xs text-slate-500 mt-2">Locking GPS satellites...</Text>
+          <Text className="text-xs text-slate-500 mt-2">Syncing latest coordinates to server...</Text>
         </View>
       ) : (
         <View className="flex-row justify-between pt-3">
