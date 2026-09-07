@@ -26,6 +26,8 @@ services:
         condition: service_healthy
       sms-service:
         condition: service_healthy
+      room-service:
+        condition: service_healthy
 
     networks:
       - sih-network
@@ -76,6 +78,33 @@ services:
 
     networks:
       - sih-network
+
+  room-service:
+    image: sih-room-service:1.0.20
+    container_name: room-service
+    build: ./java/room-service
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+    environment:
+      EUREKA_SERVER_HOST: discovery-service
+      EUREKA_SERVER_PORT: 5000
+      SPRING_PROFILES_ACTIVE: docker
+
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+
+    networks:
+      - sih-network
+
 
   sql-service:
     image: sih-sql-service:1.0.10

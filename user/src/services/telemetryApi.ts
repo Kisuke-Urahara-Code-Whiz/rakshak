@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
-const API_HOST = 'https://7706-152-58-181-7.ngrok-free.app';
+const NGROK_HOST = process.env.EXPO_PUBLIC_NGROK_HOST ?? '7706-152-58-181-7.ngrok-free.app';
+const API_HOST = `https://${NGROK_HOST}`;
 
 export function getFormattedDateTime() {
   const now = new Date();

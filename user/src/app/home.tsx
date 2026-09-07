@@ -3,6 +3,7 @@ import { Header } from '@/components/Header';
 import { VisualEvidenceCard } from '@/components/VisualEvidenceCard';
 import { VoiceMemoCard } from '@/components/VoiceMemoCard';
 import { VulnerabilityCard } from '@/components/VulnerabilityCard';
+import { useRiskWebSocket } from '@/hooks/useRiskWebSocket';
 import { useTelemetry } from '@/hooks/useTelemetry';
 import { getFileExtension, uploadMediaEvidence } from '@/services/telemetryApi';
 import { useAppStore } from '@/stores/useAppStore';
@@ -13,6 +14,9 @@ import { Alert, ScrollView, StatusBar, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
+
+  useRiskWebSocket();
+  
   const {
     phoneNumber,
     location,

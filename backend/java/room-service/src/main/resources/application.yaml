@@ -3,11 +3,6 @@ spring:
     name: room-service
   profiles:
     active: dev
+
 server:
   port: 5000
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info

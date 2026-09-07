@@ -42,14 +42,13 @@ export const useAppStore = create<AppState>()(
       setIsLoading: (loading) => set({ isLoading: loading }),
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
-      // Restored back to default null
       phoneNumber: null,
       setPhoneNumber: (phone) => set({ phoneNumber: phone }),
 
       location: null,
       setLocation: (loc) => set({ location: loc }),
 
-      riskScore: 78,
+      riskScore: 0,
       setRiskScore: (score) => set({ riskScore: score }),
 
       photoUri: null,
