@@ -3,16 +3,14 @@ package sih.sms_service.contoller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
 import sih.sms_service.service.SMSGatewayService;
 
 @RestController
+@RequiredArgsConstructor
 public class SMSController {
 
     private final SMSGatewayService smsGatewayService;
-
-    public SMSController(SMSGatewayService smsGatewayService) {
-        this.smsGatewayService = smsGatewayService;
-    }
 
     @PostMapping("/send-alert")
     public ResponseEntity<String> sendCustomSms() {

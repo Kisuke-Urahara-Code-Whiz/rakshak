@@ -6,7 +6,7 @@ module.exports = {
     slug: 'Rakshak',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/logo-nobg.png',
+    icon: './assets/images/logo.png',
     scheme: 'user',
     userInterfaceStyle: 'automatic',
     ios: {
@@ -37,6 +37,14 @@ module.exports = {
         },
       ],
       'expo-audio',
+      [
+        'expo-build-properties',
+        {
+          android: {
+            networkSecurityConfig: './network-security-config.xml',
+          },
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

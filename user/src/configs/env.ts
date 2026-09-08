@@ -7,5 +7,5 @@ export const NGROK_HOST: string =
   Constants.manifest2?.extra?.expoClient?.extra?.ngrokHost ??
   DEFAULT_NGROK_HOST;
 
-export const API_BASE_URL = `http://${NGROK_HOST}`;
-export const WS_BASE_URL = `ws://${NGROK_HOST}`;
+export const API_BASE_URL = `https://${NGROK_HOST}`;
+export const WS_BASE_URL = `wss://${NGROK_HOST}`;

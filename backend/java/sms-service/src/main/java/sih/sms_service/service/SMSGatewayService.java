@@ -27,7 +27,11 @@ public class SMSGatewayService {
     public ResponseEntity<String> sendSms() {
 
         List<String> numbers = smsClientService.getNumbers();
-        String message = "HEAVY ENVIRONMENTAL RISK IN YOUR ZONE. PLEASE MOVE TOWARDS HIGHER GROUND ADN PREVENT FROM STAYING ON LOW LEVEL GROUNDS";
+        String message =
+                "Alert!!! This is a System Generated Automated Alert Message. There is an imminent landslide risk in your area.\n" +
+                        "Action required: Evacuate immediately if you are near steep slopes or hillsides.\n" +
+                        "Road safety: Avoid all travel through mountainous or hilly terrain.\n" +
+                        "Next steps: Move to the nearest safe shelter and monitor local emergency channels for updates.";
         SMSPayload payload = new SMSPayload(new TextMessage(message), numbers);
 
         return restClient.post()
