@@ -4,19 +4,19 @@ module.exports = {
   expo: {
     name: 'Rakshak',
     slug: 'Rakshak',
-    version: '1.0.0',
+    version: '1.0.5',
     orientation: 'portrait',
-    icon: './assets/images/logo.png',
+    icon: './assets/images/LogoV3.png',
     scheme: 'user',
     userInterfaceStyle: 'automatic',
     ios: {
-      icon: './assets/images/logo-nobg.png',
+      icon: './assets/images/LogoV3.png',
     },
     android: {
       adaptiveIcon: {
         backgroundColor: '#FFFFFF',
-        foregroundImage: './assets/images/logo-nobg.png',
-        monochromeImage: './assets/images/logo-nobg.png',
+        foregroundImage: './assets/images/LogoV3.png',
+        monochromeImage: './assets/images/LogoV3.png',
       },
       predictiveBackGestureEnabled: false,
       package: 'com.sougatacodewhiz.user',
@@ -32,19 +32,11 @@ module.exports = {
         'expo-splash-screen',
         {
           backgroundColor: '#FFFFFF',
-          image: './assets/images/logo-nobg.png',
-          imageWidth: 76,
+          image: './assets/images/logo.png',
+          imageWidth: 250,
         },
       ],
       'expo-audio',
-      [
-        'expo-build-properties',
-        {
-          android: {
-            networkSecurityConfig: './network-security-config.xml',
-          },
-        },
-      ],
     ],
     experiments: {
       typedRoutes: true,

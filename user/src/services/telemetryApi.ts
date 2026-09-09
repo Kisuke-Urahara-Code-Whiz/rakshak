@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/configs/env';
+import axios from 'axios';
 import * as FileSystem from 'expo-file-system/legacy';
 
 export function getFormattedDateTime() {
@@ -50,14 +51,16 @@ export function getMimeType(extension: string): string {
 
 export async function sendHeartbeat(number: string, lat: number, lon: number, lastUpdatedAt: string) {
   console.log('Sending heartbeat to URL:', `${API_BASE_URL}/sql/enter`);
-  return fetch(`${API_BASE_URL}/sql/enter`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-    },
-    body: JSON.stringify({ number: Number(number), lat, lon, lastUpdatedAt }),
-  });
+  return axios.post(
+    `${API_BASE_URL}/sql/enter`,
+    { number: Number(number), lat, lon, lastUpdatedAt },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    }
+  );
 }
 
 export async function uploadMediaEvidence(

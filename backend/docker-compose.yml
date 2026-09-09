@@ -182,7 +182,7 @@ services:
       - sih-network
 
   sms-service:
-    image: sms-service:1.0.2
+    image: sms-service:1.0.5
     container_name: sms-service
     build: ./java/sms-service
 
