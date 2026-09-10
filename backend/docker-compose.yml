@@ -107,7 +107,7 @@ services:
 
 
   sql-service:
-    image: sih-sql-service:1.0.10
+    image: sih-sql-service:2.7.0
     container_name: sql-service
     build: ./java/sql-service
 
@@ -131,21 +131,10 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
 
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-
-      RABBITMQ_QUEUE_LOCATION: ${QUEUE}
-      RABBITMQ_EXCHANGE_NAME: ${EXCHANGE_KEY}
-      RABBITMQ_ROUTING_LOCATION: ${ROUTING_KEY}
-
     depends_on:
       discovery-service:
         condition: service_healthy
       postgres:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
 
     networks:
@@ -182,7 +171,7 @@ services:
       - sih-network
 
   sms-service:
-    image: sms-service:1.0.5
+    image: sms-service:2.0.0
     container_name: sms-service
     build: ./java/sms-service
 
@@ -238,25 +227,6 @@ services:
 
     networks:
       - sih-network
-
-
-  rabbitmq:
-    image: rabbitmq:management
-    container_name: rmq-server
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - sih-network
-
 
 networks:
   sih-network:

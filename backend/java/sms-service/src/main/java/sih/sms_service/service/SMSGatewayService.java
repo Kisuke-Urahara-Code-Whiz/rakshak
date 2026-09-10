@@ -4,17 +4,22 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import java.util.List;
 import sih.sms_service.config.SMSDeviceConfig;
+import sih.sms_service.constant.LandslideAlertMessages;
+import sih.sms_service.constant.WelcomeAlertMessages;
+import sih.sms_service.dtos.CitizenContactDto;
 import sih.sms_service.entities.SMSPayload;
 import sih.sms_service.entities.TextMessage;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class SMSGatewayService {
 
     private final RestClient restClient;
     private final SMSClientService smsClientService;
-
 
     public SMSGatewayService(SMSDeviceConfig properties, SMSClientService smsClientService) {
         this.restClient = RestClient.builder()
@@ -24,15 +29,13 @@ public class SMSGatewayService {
         this.smsClientService = smsClientService;
     }
 
-    public ResponseEntity<String> sendSms() {
+    public ResponseEntity<String> sendWelcomeSms(CitizenContactDto contact) {
+        String formattedNumber = contact.number().startsWith("+91")
+                ? contact.number()
+                : "+91" + contact.number();
 
-        List<String> numbers = smsClientService.getNumbers();
-        String message =
-                "Alert!!! This is a System Generated Automated Alert Message. There is an imminent landslide risk in your area.\n" +
-                        "Action required: Evacuate immediately if you are near steep slopes or hillsides.\n" +
-                        "Road safety: Avoid all travel through mountainous or hilly terrain.\n" +
-                        "Next steps: Move to the nearest safe shelter and monitor local emergency channels for updates.";
-        SMSPayload payload = new SMSPayload(new TextMessage(message), numbers);
+        String message = WelcomeAlertMessages.getMessage(contact.lang());
+        SMSPayload payload = new SMSPayload(new TextMessage(message), List.of(formattedNumber));
 
         return restClient.post()
                 .uri("/message")
@@ -42,17 +45,33 @@ public class SMSGatewayService {
                 .toEntity(String.class);
     }
 
-    public ResponseEntity<String> sendWelcomeSms(String number) {
+    public ResponseEntity<String> sendAlertSms() {
+        List<CitizenContactDto> contacts = smsClientService.getNumbers();
 
-        String message = "WELCOME TO RAKSHAK APP";
-        SMSPayload payload = new SMSPayload(new TextMessage(message), List.of(number));
+        Map<String, List<String>> languageGroups = contacts.stream()
+                .collect(Collectors.groupingBy(
+                        c -> c.lang() != null ? c.lang().trim().toLowerCase() : "en",
+                        Collectors.mapping(
+                                c -> c.number().startsWith("+91") ? c.number() : "+91" + c.number(),
+                                Collectors.toList()
+                        )
+                ));
 
-        return restClient.post()
-                .uri("/message")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(payload)
-                .retrieve()
-                .toEntity(String.class);
+        for (Map.Entry<String, List<String>> entry : languageGroups.entrySet()) {
+            String lang = entry.getKey();
+            List<String> phoneNumbers = entry.getValue();
+
+            String alertMessage = LandslideAlertMessages.getMessage(lang);
+            SMSPayload payload = new SMSPayload(new TextMessage(alertMessage), phoneNumbers);
+
+            restClient.post()
+                    .uri("/message")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toEntity(String.class);
+        }
+
+        return ResponseEntity.ok("Alert SMS dispatched to all citizens");
     }
-
 }

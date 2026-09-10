@@ -27,6 +27,10 @@ public class Citizen {
     @Column(name = "long", nullable = false)
     private Double longitude;
 
+    @Column(name = "lang", nullable = false, length = 10)
+    @Builder.Default
+    private String lang = "en";
+
     @Column(name = "last_updated_at")
     private LocalDateTime lastUpdatedAt;
 }

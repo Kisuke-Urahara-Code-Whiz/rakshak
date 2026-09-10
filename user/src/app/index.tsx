@@ -63,9 +63,12 @@ export default function LoginScreen() {
       const { lastUpdatedAt } = getFormattedDateTime();
       const response = await sendHeartbeat(cleanNumber, lat, lon, lastUpdatedAt);
 
-      if (!response.ok) {
+      // Check the status code directly instead of relying on .ok
+      if (response.status < 200 || response.status >= 300) {
         throw new Error(`Server returned status: ${response.status}`);
       }
+
+      setPhoneNumber(cleanNumber);
 
       setPhoneNumber(cleanNumber);
       router.replace('/home' as any);

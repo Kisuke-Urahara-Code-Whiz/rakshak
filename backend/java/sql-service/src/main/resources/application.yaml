@@ -2,12 +2,6 @@ spring:
   application:
     name: sql-service
 
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: RABBITMQ_USERNAME
-    password: RABBITMQ_PASSWORD
-
   datasource:
     url: jdbc:postgresql://${db.host}:${db.port}/${db.name}
     username: ${db.username}
@@ -27,12 +21,4 @@ db:
   port: xx
   username: xx
   password: xx
-
-rabbitmq:
-  queue:
-    location: RABBITMQ_LOCATION_QUEUE_NAME
-  exchange:
-    name: RABBITMQ_EXCHANGE_KEY
-  routing:
-    location: RABBITMQ_LOCATION_QUEUE_ROUTINGKEY
 

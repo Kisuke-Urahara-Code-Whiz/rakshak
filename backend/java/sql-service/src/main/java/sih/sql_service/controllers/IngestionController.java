@@ -1,19 +1,17 @@
 package sih.sql_service.controllers;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import sih.sql_service.dtos.CitizenContactDto;
+import sih.sql_service.dtos.CitizenLanguageUpdateDto;
 import sih.sql_service.dtos.CitizenLocationDto;
 import sih.sql_service.dtos.UploadDto;
 import sih.sql_service.services.CitizenService;
 import sih.sql_service.services.UploadService;
 
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,8 +22,14 @@ public class IngestionController {
 
     @PostMapping("/enter")
     public ResponseEntity<String> enter(@RequestBody CitizenLocationDto dto) {
-        String result = citizenService.processLocation(dto);
-        return ResponseEntity.ok(result);
+        String lang = citizenService.processLocation(dto);
+        return ResponseEntity.ok(lang);
+    }
+
+    @PutMapping("/citizen/language")
+    public ResponseEntity<String> updateLanguage(@RequestBody CitizenLanguageUpdateDto dto) {
+        String updatedLang = citizenService.updateLanguage(dto);
+        return ResponseEntity.ok(updatedLang);
     }
 
     @PostMapping("/upload")
@@ -35,9 +39,8 @@ public class IngestionController {
     }
 
     @GetMapping("/numbers")
-    public ResponseEntity<List<String>> getAllCitizenNumbers() {
-        List<String> numbers = citizenService.getAllNumbers();
-        return ResponseEntity.ok(numbers);
+    public ResponseEntity<List<CitizenContactDto>> getAllCitizenNumbers() {
+        List<CitizenContactDto> contacts = citizenService.getAllNumbersWithLang();
+        return ResponseEntity.ok(contacts);
     }
-
 }
