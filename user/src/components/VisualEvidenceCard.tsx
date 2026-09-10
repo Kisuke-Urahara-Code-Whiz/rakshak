@@ -1,4 +1,6 @@
+import { i18n } from '@/services/i18n';
 import { getFileExtension } from '@/services/telemetryApi';
+import { useAppStore } from '@/stores/useAppStore';
 import * as ImagePicker from 'expo-image-picker';
 import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 
@@ -9,11 +11,22 @@ interface VisualEvidenceCardProps {
   isSending: boolean;
 }
 
-export function VisualEvidenceCard({ photoUri, onSetPhotoUri, onSendPhoto, isSending }: VisualEvidenceCardProps) {
+export function VisualEvidenceCard({
+  photoUri,
+  onSetPhotoUri,
+  onSendPhoto,
+  isSending,
+}: VisualEvidenceCardProps) {
+  const language = useAppStore((state) => state.language);
+  i18n.setLanguage(language);
+
   const handleCapture = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Access Denied', 'Camera permission required for hazard logging.');
+      Alert.alert(
+        i18n.t('alert_camera_title'),
+        i18n.t('alert_camera_msg')
+      );
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -32,13 +45,22 @@ export function VisualEvidenceCard({ photoUri, onSetPhotoUri, onSendPhoto, isSen
     <View className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mb-4">
       <View className="flex-row items-center justify-between mb-2">
         <View>
-          <Text className="text-xs font-bold text-slate-800">Visual Evidence</Text>
+          <Text className="text-xs font-bold text-slate-800">
+            {i18n.t('visual_card_title')}
+          </Text>
           <Text className="text-[11px] text-slate-500">
-            {photoUri ? `Asset attached [${ext}]` : 'No field snapshot captured'}
+            {photoUri
+              ? `${i18n.t('visual_status_attached')} [${ext}]`
+              : i18n.t('visual_status_empty')}
           </Text>
         </View>
-        <TouchableOpacity onPress={handleCapture} className="bg-[#002b53] px-3.5 py-1.5 rounded active:opacity-80">
-          <Text className="text-white text-xs font-semibold">{photoUri ? 'Retake Media' : 'Open Camera'}</Text>
+        <TouchableOpacity
+          onPress={handleCapture}
+          className="bg-[#002b53] px-3.5 py-1.5 rounded active:opacity-80"
+        >
+          <Text className="text-white text-xs font-semibold">
+            {photoUri ? i18n.t('btn_retake_media') : i18n.t('btn_open_camera')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -56,7 +78,7 @@ export function VisualEvidenceCard({ photoUri, onSetPhotoUri, onSendPhoto, isSen
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
               <Text className="text-white text-xs font-bold uppercase tracking-wider">
-                Transmit Visual Evidence ({ext})
+                {i18n.t('btn_transmit_visual')} ({ext})
               </Text>
             )}
           </TouchableOpacity>
