@@ -50,7 +50,7 @@ async def process_alert(req: AlertRequest):
 async def receive_hardware_data(payload: List[SensorReading]):
     """Receives sensor payload from serial COM script and checks thresholds."""
     global latest_hardware_moisture
-    
+    global counter
     parsed_array = []
     alert_triggered = False
 
@@ -66,12 +66,19 @@ async def receive_hardware_data(payload: List[SensorReading]):
             parsed_array.append(val)
             # Numeric threshold check for soil moisture
             if val <= 150.0 and not alert_triggered:
-                if(counter<3):
-                    res =requests.post("https://telesthetic-tridimensionally-margarete.ngrok-free.dev/sms/send-alert")
-                    counter += 1
-
+                if(counter<1):
+                    res2 =requests.post("https://telesthetic-tridimensionally-margarete.ngrok-free.dev/sms/send-alert")
+                    if(res2.status_code==200):
+                        counter += 1
+                        print(f"[THRESHOLD ALERT Triggered]: {res2.status_code} {res2.text}")
+                try:
+                    res = await process_alert(AlertRequest(device_id="device_1", duration_ms=5000))
+                    print(f"[WAN ALERT SENT]: {res}")
+                except Exception as e:
+                    print(f"[ALERT ERROR]: {e}")
+                    
                 #res = await process_alert(AlertRequest(device_id="device_1", duration_ms=5000))
-                print(f"[THRESHOLD ALERT Triggered]: ",res.status_code, res.text)
+                
                 alert_triggered = True  # Prevent triggering 100 times in a single payload loop
                 
         except ValueError:
