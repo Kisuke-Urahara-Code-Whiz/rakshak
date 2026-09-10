@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: sql-service
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: RABBITMQ_USERNAME
+    password: RABBITMQ_PASSWORD
+
+  datasource:
+    url: jdbc:postgresql://${db.host}:${db.port}/${db.name}
+    username: ${db.username}
+    password: ${db.password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 5000
+
+db:
+  host: xx
+  port: xx
+  username: xx
+  password: xx
+
+rabbitmq:
+  queue:
+    location: RABBITMQ_LOCATION_QUEUE_NAME
+  exchange:
+    name: RABBITMQ_EXCHANGE_KEY
+  routing:
+    location: RABBITMQ_LOCATION_QUEUE_ROUTINGKEY
+
