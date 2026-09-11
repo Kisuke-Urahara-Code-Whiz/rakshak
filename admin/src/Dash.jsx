@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Dash() {
+  if (window.localStorage.getItem("user") !== "admin") {
+    window.location.href = "/login";
+  }
   const location = useLocation();
   const navigate = useNavigate();
 
