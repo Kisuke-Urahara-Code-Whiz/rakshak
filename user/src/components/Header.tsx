@@ -5,10 +5,9 @@ import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 interface HeaderProps {
   phoneNumber: string | null;
-  onExit: () => void;
 }
 
-export function Header({ phoneNumber, onExit }: HeaderProps) {
+export function Header({ phoneNumber }: HeaderProps) {
   const router = useRouter();
   const language = useAppStore((state) => state.language);
   i18n.setLanguage(language);
@@ -28,17 +27,14 @@ export function Header({ phoneNumber, onExit }: HeaderProps) {
           <Text className="text-slate-300 text-[11px]">{i18n.t('app_subtitle')}</Text>
         </View>
       </View>
-      <View className="flex-row items-center gap-2">
-        <TouchableOpacity
-          onPress={() => router.push('/settings' as any)}
-          className="bg-[#001f3d] px-2.5 py-1 rounded border border-blue-400/30 active:opacity-80"
-        >
-          <Text className="text-blue-200 text-[11px] font-mono">+91 {phoneNumber} ⚙</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onExit} className="bg-red-700 px-2.5 py-1 rounded active:opacity-80">
-          <Text className="text-white text-[11px] font-bold">{i18n.t('btn_exit')}</Text>
-        </TouchableOpacity>
-      </View>
+
+      {/* Settings Gear Icon Button (Phone number badge removed) */}
+      <TouchableOpacity
+        onPress={() => router.push('/settings' as any)}
+        className="bg-slate-700 px-3 py-1.5 rounded active:opacity-80 border border-slate-600"
+      >
+        <Text className="text-white text-xs font-bold">⚙ Settings</Text>
+      </TouchableOpacity>
     </View>
   );
 }

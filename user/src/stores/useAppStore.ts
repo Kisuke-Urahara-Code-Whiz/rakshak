@@ -61,7 +61,7 @@ export const useAppStore = create<AppState>()(
       location: null,
       setLocation: (loc) => set({ location: loc }),
 
-      riskScore: 0,
+      riskScore: 35,
       setRiskScore: (score) => set({ riskScore: score }),
 
       photoUri: null,
