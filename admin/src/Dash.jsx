@@ -228,7 +228,7 @@ export default function Dash() {
             <span className="text-blue-200 text-[11px] font-mono tracking-wider font-semibold">SEC-NODE // SDRF-09</span>
           </div>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/map")}
             className="rounded bg-blue-50 px-3 py-1 text-[11px] font-bold text-[#002b53] border border-blue-200 hover:bg-blue-100 active:opacity-80 transition-all"
           >
             ← Back to Map

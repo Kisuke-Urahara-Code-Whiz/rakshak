@@ -10,7 +10,6 @@ export default function Login({ onLogin }) {
 
   const navigate = useNavigate();
 
-  // Invoke backend endpoint to trigger OTP dispatch
   const handleSendOtp = async () => {
     if (!employeeUid.trim()) {
       setError("Please enter a valid Employee UID");
@@ -30,7 +29,6 @@ export default function Login({ onLogin }) {
       if (res.ok) {
         setOtpSent(true);
       } else {
-        // Fallback simulation if backend endpoint is not yet configured
         setOtpSent(true);
       }
     } catch (err) {
@@ -44,12 +42,11 @@ export default function Login({ onLogin }) {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    // Check if password matches 'admin'
     if (password === "admin") {
-      //onLogin(true);
       window.localStorage.setItem("user", "admin");
-      console.log("Login successful. Navigating to dashboard...");
-      navigate("/dash");
+      console.log("Login successful. Navigating to regional map...");
+      // Redirect to MapView after successful login
+      navigate("/map");
     } else {
       setError("Invalid password. Password must be 'admin'");
     }
@@ -63,7 +60,7 @@ export default function Login({ onLogin }) {
           <img
             src="/logo-nobg.png"
             alt="RAKSHAK Logo"
-            className="h-full w-full scale-[1.55] object-contain"
+            className="h-full w-full scale-[1.85] object-contain"
           />
         </div>
         <h1 className="mt-4 text-3xl font-black uppercase tracking-wider text-[#002b53]">
