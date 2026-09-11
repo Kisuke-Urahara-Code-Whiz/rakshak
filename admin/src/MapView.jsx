@@ -91,6 +91,8 @@ export default function MapView() {
 
   const handleMapClick = (e) => {
     const { lng, lat } = e.lngLat;
+    console.log(`Map clicked at: Longitude ${lng}, Latitude ${lat}`);
+    window.localStorage.setItem("lastClick", JSON.stringify({ lng, lat }));
     if (!riskData.features.length) return;
 
     const clickPt = turf.point([lng, lat]);
