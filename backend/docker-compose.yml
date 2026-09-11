@@ -54,7 +54,7 @@ services:
       - sih-network
 
   media-service:
-    image: sih-media-service:1.0.17
+    image: sih-media-service:2.0.0
     container_name: media-service
     build: ./java/media-service
 

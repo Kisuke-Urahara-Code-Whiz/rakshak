@@ -1,4 +1,4 @@
-package sih.media_service.service;
+package sih.media_service.services;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Service;
