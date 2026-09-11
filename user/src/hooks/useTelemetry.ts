@@ -1,18 +1,25 @@
-import { useAppStore } from '@/stores/useAppStore';
+import { i18n } from '@/services/i18n';
+import { getFormattedDateTime, sendHeartbeat } from '@/services/telemetryApi';
+import { SupportedLanguage, useAppStore } from '@/stores/useAppStore';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { getFormattedDateTime, sendHeartbeat } from '../services/telemetryApi';
 
 export function useTelemetry() {
-  const { phoneNumber, location, setLocation } = useAppStore();
+  const { phoneNumber, location, setLocation, language, setLanguage } = useAppStore();
   const [locating, setLocating] = useState(false);
+
+  // Keep i18n updated with current persisted language
+  i18n.setLanguage(language);
 
   async function fetchFreshCoordinates(): Promise<{ latitude: number; longitude: number } | null> {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'GPS access is required for real-time risk assessment.');
+        Alert.alert(
+          i18n.t('alert_audio_perm_title') || 'Permission Denied',
+          i18n.t('alert_loc_req_msg') || 'GPS access is required for real-time risk assessment.'
+        );
         return null;
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
@@ -24,7 +31,10 @@ export function useTelemetry() {
       setLocation({ ...coords, accuracy: loc.coords.accuracy });
       return coords;
     } catch {
-      Alert.alert('GPS Error', 'Failed to acquire fresh spatial fix.');
+      Alert.alert(
+        i18n.t('alert_reg_err_title') || 'GPS Error',
+        'Failed to acquire fresh spatial fix.'
+      );
       return null;
     }
   }
@@ -35,7 +45,16 @@ export function useTelemetry() {
     if (!coords) return;
     try {
       const { lastUpdatedAt } = getFormattedDateTime();
-      await sendHeartbeat(phoneNumber, coords.latitude, coords.longitude, lastUpdatedAt);
+      const res = await sendHeartbeat(phoneNumber, coords.latitude, coords.longitude, lastUpdatedAt);
+      
+      // Keep local language synced if backend returns an updated preference
+      if (res.data && typeof res.data === 'string') {
+        const remoteLang = res.data.trim() as SupportedLanguage;
+        if (remoteLang && remoteLang !== language) {
+          setLanguage(remoteLang);
+          i18n.setLanguage(remoteLang);
+        }
+      }
     } catch (e) {
       console.warn('Periodic telemetry ping failed:', e);
     }
@@ -70,6 +89,15 @@ export function useTelemetry() {
 
       if (res.status < 200 || res.status >= 300) {
         throw new Error(`Server returned status: ${res.status}`);
+      }
+
+      // Sync language preference if returned
+      if (res.data && typeof res.data === 'string') {
+        const remoteLang = res.data.trim() as SupportedLanguage;
+        if (remoteLang && remoteLang !== language) {
+          setLanguage(remoteLang);
+          i18n.setLanguage(remoteLang);
+        }
       }
     } catch (e: any) {
       Alert.alert('Transmission Failed', e.message || 'Unable to reach the server.');

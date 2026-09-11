@@ -8,20 +8,27 @@ export interface LocationCoordinates {
   accuracy?: number | null;
 }
 
+export type SupportedLanguage = 'en' | 'hi' | 'as' | 'bn' | 'ne' | 'mni' | 'lus' | 'kha' | 'gar';
+
 interface AppState {
   isLoading: boolean;
   hasHydrated: boolean;
   setIsLoading: (loading: boolean) => void;
   setHasHydrated: (hydrated: boolean) => void;
 
-  // Persisted User & Incident States
+  language: SupportedLanguage;
+  setLanguage: (lang: SupportedLanguage) => void;
+
+  isLanguageConfigured: boolean;
+  setIsLanguageConfigured: (status: boolean) => void;
+
   phoneNumber: string | null;
   setPhoneNumber: (phone: string | null) => void;
 
   location: LocationCoordinates | null;
   setLocation: (loc: LocationCoordinates | null) => void;
 
-  riskScore: number; // 0 to 100 percentage
+  riskScore: number;
   setRiskScore: (score: number) => void;
 
   photoUri: string | null;
@@ -42,6 +49,12 @@ export const useAppStore = create<AppState>()(
       setIsLoading: (loading) => set({ isLoading: loading }),
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
+      language: 'en',
+      setLanguage: (lang) => set({ language: lang }),
+
+      isLanguageConfigured: false,
+      setIsLanguageConfigured: (status) => set({ isLanguageConfigured: status }),
+
       phoneNumber: null,
       setPhoneNumber: (phone) => set({ phoneNumber: phone }),
 
@@ -61,15 +74,18 @@ export const useAppStore = create<AppState>()(
       logout: () =>
         set({
           phoneNumber: null,
+          isLanguageConfigured: false,
           photoUri: null,
           voiceUri: null,
           location: null,
         }),
     }),
     {
-      name: 'rakshak-app-storage-v1', // Bumped key to purge the cached mock phone number
+      name: 'rakshak-app-storage-v1',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
+        language: state.language,
+        isLanguageConfigured: state.isLanguageConfigured,
         phoneNumber: state.phoneNumber,
         photoUri: state.photoUri,
         voiceUri: state.voiceUri,
