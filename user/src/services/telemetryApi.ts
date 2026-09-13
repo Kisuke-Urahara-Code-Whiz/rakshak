@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '@/configs/env';
 import axios from 'axios';
-import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
 
 export function getFormattedDateTime() {
   const now = new Date();
@@ -49,8 +49,12 @@ export function getMimeType(extension: string): string {
   }
 }
 
-export async function sendHeartbeat(number: string, lat: number, lon: number, lastUpdatedAt: string) {
-  console.log('Sending heartbeat to URL:', `${API_BASE_URL}/sql/enter`);
+export async function sendHeartbeat(
+  number: string,
+  lat: number,
+  lon: number,
+  lastUpdatedAt: string
+) {
   return axios.post(
     `${API_BASE_URL}/sql/enter`,
     { number: Number(number), lat, lon, lastUpdatedAt },
@@ -63,6 +67,28 @@ export async function sendHeartbeat(number: string, lat: number, lon: number, la
   );
 }
 
+export async function updateCitizenLanguage(
+  phoneNumber: string,
+  lang: string,
+  userType: 'NEW' | 'OLD'
+) {
+  return axios.put(
+    `${API_BASE_URL}/sql/citizen/language`,
+    {
+      number: Number(phoneNumber),
+      lang,
+      userType,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    }
+  );
+}
+
+
 export async function uploadMediaEvidence(
   fileUri: string,
   phoneNumber: string,
@@ -71,20 +97,32 @@ export async function uploadMediaEvidence(
 ) {
   const { date, time } = getFormattedDateTime();
   const mimeType = getMimeType(fileType);
+  const normalizedExt = fileType.toLowerCase();
+  const fileName = `upload_${Date.now()}.${normalizedExt}`;
 
-  return FileSystem.uploadAsync(`${API_BASE_URL}/media/upload`, fileUri, {
-    fieldName: 'file',
-    httpMethod: 'POST',
-    uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-    mimeType,
-    headers: { 'ngrok-skip-browser-warning': 'true' },
-    parameters: {
-      number: String(phoneNumber),
-      fileType,
-      date,
-      lat: String(coords.latitude),
-      lon: String(coords.longitude),
-      time,
+  const normalizedUri =
+    Platform.OS === 'ios' ? fileUri.replace('file://', '') : fileUri;
+
+  const formData = new FormData();
+
+  formData.append('file', {
+    uri: normalizedUri,
+    type: mimeType,
+    name: fileName,
+  } as any);
+
+  formData.append('number', String(phoneNumber));
+  formData.append('fileType', fileType);
+  formData.append('date', date);
+  formData.append('time', time);
+  formData.append('lat', String(coords.latitude));
+  formData.append('lon', String(coords.longitude));
+
+  return axios.post(`${API_BASE_URL}/media/upload`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'ngrok-skip-browser-warning': 'true',
     },
+    transformRequest: (data) => data, 
   });
 }

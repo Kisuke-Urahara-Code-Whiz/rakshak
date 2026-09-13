@@ -1,10 +1,12 @@
+import { i18n } from '@/services/i18n';
 import { getFileExtension } from '@/services/telemetryApi';
+import { useAppStore } from '@/stores/useAppStore';
 import {
-    AudioModule,
-    RecordingPresets,
-    useAudioPlayer,
-    useAudioPlayerStatus,
-    useAudioRecorder,
+  AudioModule,
+  RecordingPresets,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  useAudioRecorder,
 } from 'expo-audio';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
@@ -16,7 +18,15 @@ interface VoiceMemoCardProps {
   isSending: boolean;
 }
 
-export function VoiceMemoCard({ voiceUri, onSetVoiceUri, onSendAudio, isSending }: VoiceMemoCardProps) {
+export function VoiceMemoCard({
+  voiceUri,
+  onSetVoiceUri,
+  onSendAudio,
+  isSending,
+}: VoiceMemoCardProps) {
+  const language = useAppStore((state) => state.language);
+  i18n.setLanguage(language);
+
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [isRecording, setIsRecording] = useState(false);
   const player = useAudioPlayer(voiceUri);
@@ -27,7 +37,10 @@ export function VoiceMemoCard({ voiceUri, onSetVoiceUri, onSendAudio, isSending 
       if (playerStatus.playing) player.pause();
       const perm = await AudioModule.requestRecordingPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Permission Denied', 'Microphone access is required for voice briefings.');
+        Alert.alert(
+          i18n.t('alert_audio_perm_title'),
+          i18n.t('alert_audio_perm_msg')
+        );
         return;
       }
       await AudioModule.setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -35,7 +48,10 @@ export function VoiceMemoCard({ voiceUri, onSetVoiceUri, onSendAudio, isSending 
       audioRecorder.record();
       setIsRecording(true);
     } catch {
-      Alert.alert('Audio Error', 'Could not initialize voice recording.');
+      Alert.alert(
+        i18n.t('alert_audio_err_title'),
+        i18n.t('alert_audio_init_fail')
+      );
     }
   };
 
@@ -46,7 +62,10 @@ export function VoiceMemoCard({ voiceUri, onSetVoiceUri, onSendAudio, isSending 
       await AudioModule.setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
       if (audioRecorder.uri) onSetVoiceUri(audioRecorder.uri);
     } catch {
-      Alert.alert('Audio Error', 'Failed to finalize audio file.');
+      Alert.alert(
+        i18n.t('alert_audio_err_title'),
+        i18n.t('alert_audio_final_fail')
+      );
     }
   };
 
@@ -56,13 +75,20 @@ export function VoiceMemoCard({ voiceUri, onSetVoiceUri, onSendAudio, isSending 
       if (playerStatus.playing) {
         player.pause();
       } else {
-        if (playerStatus.currentTime && playerStatus.duration && playerStatus.currentTime >= playerStatus.duration) {
+        if (
+          playerStatus.currentTime &&
+          playerStatus.duration &&
+          playerStatus.currentTime >= playerStatus.duration
+        ) {
           player.seekTo(0);
         }
         player.play();
       }
     } catch {
-      Alert.alert('Playback Error', 'Could not play voice memo.');
+      Alert.alert(
+        i18n.t('alert_playback_err_title'),
+        i18n.t('alert_playback_err_msg')
+      );
     }
   };
 
@@ -72,17 +98,29 @@ export function VoiceMemoCard({ voiceUri, onSetVoiceUri, onSendAudio, isSending 
     <View className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
       <View className="flex-row items-center justify-between mb-2">
         <View>
-          <Text className="text-xs font-bold text-slate-800">Voice Telemetry Briefing</Text>
+          <Text className="text-xs font-bold text-slate-800">
+            {i18n.t('voice_card_title')}
+          </Text>
           <Text className="text-[11px] text-slate-500">
-            {isRecording ? 'Recording audio stream...' : voiceUri ? `Audio ready [${ext}]` : 'No voice briefing recorded'}
+            {isRecording
+              ? i18n.t('voice_status_recording')
+              : voiceUri
+              ? `${i18n.t('voice_status_ready')} [${ext}]`
+              : i18n.t('voice_status_empty')}
           </Text>
         </View>
         <TouchableOpacity
           onPress={isRecording ? stopRecording : startRecording}
-          className={`px-3.5 py-1.5 rounded active:opacity-80 ${isRecording ? 'bg-red-600' : 'bg-[#002b53]'}`}
+          className={`px-3.5 py-1.5 rounded active:opacity-80 ${
+            isRecording ? 'bg-red-600' : 'bg-[#002b53]'
+          }`}
         >
           <Text className="text-white text-xs font-semibold">
-            {isRecording ? 'Stop Recording' : voiceUri ? 'Re-record' : 'Record'}
+            {isRecording
+              ? i18n.t('btn_recording_stop')
+              : voiceUri
+              ? i18n.t('btn_rerecord')
+              : i18n.t('btn_record')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -91,13 +129,24 @@ export function VoiceMemoCard({ voiceUri, onSetVoiceUri, onSendAudio, isSending 
         <View className="mt-3 pt-3 border-t border-slate-200">
           <View className="flex-row items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2 mb-3">
             <View className="flex-row items-center gap-2">
-              <View className={`w-2.5 h-2.5 rounded-full ${playerStatus.playing ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+              <View
+                className={`w-2.5 h-2.5 rounded-full ${
+                  playerStatus.playing ? 'bg-emerald-500' : 'bg-slate-400'
+                }`}
+              />
               <Text className="text-xs font-medium text-slate-700">
-                {playerStatus.playing ? 'Playing memo...' : `Recorded Memo (${ext})`}
+                {playerStatus.playing
+                  ? i18n.t('voice_playing')
+                  : `${i18n.t('voice_recorded_memo')} (${ext})`}
               </Text>
             </View>
-            <TouchableOpacity onPress={handleTogglePlayback} className="bg-blue-50 border border-blue-200 px-3.5 py-1 rounded active:opacity-75">
-              <Text className="text-[#002b53] text-xs font-bold">{playerStatus.playing ? 'Pause' : 'Play Memo'}</Text>
+            <TouchableOpacity
+              onPress={handleTogglePlayback}
+              className="bg-blue-50 border border-blue-200 px-3.5 py-1 rounded active:opacity-75"
+            >
+              <Text className="text-[#002b53] text-xs font-bold">
+                {playerStatus.playing ? i18n.t('btn_pause_memo') : i18n.t('btn_play_memo')}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -109,7 +158,9 @@ export function VoiceMemoCard({ voiceUri, onSetVoiceUri, onSendAudio, isSending 
             {isSending ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <Text className="text-white text-xs font-bold uppercase tracking-wider">Transmit Voice Memo ({ext})</Text>
+              <Text className="text-white text-xs font-bold uppercase tracking-wider">
+                {i18n.t('btn_transmit_voice')} ({ext})
+              </Text>
             )}
           </TouchableOpacity>
         </View>

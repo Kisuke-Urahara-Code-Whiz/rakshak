@@ -4,7 +4,7 @@ module.exports = {
   expo: {
     name: 'Rakshak',
     slug: 'Rakshak',
-    version: '1.0.5',
+    version: '1.5.17',
     orientation: 'portrait',
     icon: './assets/images/LogoV3.png',
     scheme: 'user',

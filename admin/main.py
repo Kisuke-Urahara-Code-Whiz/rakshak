@@ -6,6 +6,8 @@ import copy
 import random
 import json
 import requests
+import stomp
+import time
 
 from iotModel import AlertManager, AlertRequest
 
@@ -20,6 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+url = "wss://telesthetic-tridimensionally-margarete.ngrok-free.dev"
 class SensorReading(BaseModel):
     timestamp: str
     value: str
@@ -51,32 +54,51 @@ async def receive_hardware_data(payload: List[SensorReading]):
     """Receives sensor payload from serial COM script and checks thresholds."""
     global latest_hardware_moisture
     global counter
+    global url
     parsed_array = []
+    risk_values = []
     alert_triggered = False
 
     for item in payload:
         try:
             val = float(item.value)
+            risk = 90.0
             if(val < 200):
                 val = 116.0+random.randint(-5, 3)  # Cap at 200 with slight randomization
+                risk = 91.0+random.randint(0,3)  # Cap at 94.1 with slight randomization
             if(val>200 and val<250):
+                risk = 69.0+random.randint(0,6)  # Cap at 95.0 with slight randomization
                 val = 250+random.randint(-25, 10)  # Cap at 250 with slight randomization
+            if(val>=250 and val<350):
+                risk = 35.0+random.randint(-1,6)  # Cap at 56.0 with slight randomization
+                
             if(val > 450):
+                risk = 20.0+random.randint(0,6)  # Cap at 20.9 with slight randomization
                 val = 450+random.randint(-5, 5)  # Cap at 450 with slight randomization
             parsed_array.append(val)
+            risk_values.append(risk)
+              # Pass the risk value as a list to the taker function
+
             # Numeric threshold check for soil moisture
             if val <= 150.0 and not alert_triggered:
-                if(counter<1):
+                if(counter<5):
                     res2 =requests.post("https://telesthetic-tridimensionally-margarete.ngrok-free.dev/sms/send-alert")
                     if(res2.status_code==200):
                         counter += 1
                         print(f"[THRESHOLD ALERT Triggered]: {res2.status_code} {res2.text}")
                 try:
-                    res = await process_alert(AlertRequest(device_id="device_1", duration_ms=5000))
+                    res = await process_alert(AlertRequest(device_id="device_1", duration_ms=500))
+                    print(f"[WAN ALERT SENT]: {res}")
+                    res = await process_alert(AlertRequest(device_id="device_2", duration_ms=500))
                     print(f"[WAN ALERT SENT]: {res}")
                 except Exception as e:
                     print(f"[ALERT ERROR]: {e}")
-                    
+                payl2 = {
+                            "risk": risk
+                        }
+                print("hola")
+                if(risk>85.0):
+                    requests.post('http://127.0.0.1:8081/stompv2', json=payl2)                    
                 #res = await process_alert(AlertRequest(device_id="device_1", duration_ms=5000))
                 
                 alert_triggered = True  # Prevent triggering 100 times in a single payload loop
@@ -85,6 +107,13 @@ async def receive_hardware_data(payload: List[SensorReading]):
             parsed_array.append(0.0) 
             
     latest_hardware_moisture = parsed_array
+    if(not alert_triggered):
+                
+        payl = {
+            "risk": 35 + random.randint(0,10)+random.random()*1.5
+        }
+        print("should not cross 60")
+        requests.post('http://127.0.0.1:8081/stompv2', json=payl)  # Call the STOMP endpoint with the parsed array
     return {"status": "success", "received_count": len(latest_hardware_moisture)}
 
 @app.get("/api/soil-series")
@@ -147,6 +176,7 @@ async def trigger_alert_route(req: AlertRequest):
     if res.get("status") == "error":
         raise HTTPException(status_code=404, detail=res["detail"])
     return res
+
 
 if __name__ == "__main__":
     import uvicorn

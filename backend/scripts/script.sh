@@ -32,6 +32,7 @@ echo " Starting Docker Compose"
 echo "========================================"
 
 cd "$BASE_DIR"
+cd ../
 docker compose up -d
 
 echo
