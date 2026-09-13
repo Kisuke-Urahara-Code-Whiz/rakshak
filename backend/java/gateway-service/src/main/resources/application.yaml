@@ -48,6 +48,27 @@ spring:
               filters:
                 - StripPrefix=1
 
+            - id: risk-engine-service
+              uri: lb://RISK-ENGINE-SERVICE
+              predicates:
+                - Path=/risk/**
+              filters:
+                - StripPrefix=1
+
+            - id: stomp-service
+              uri: lb://STOMP-SERVICE
+              predicates:
+                - Path=/stomp/**
+              filters:
+                - StripPrefix=1
+
+            - id: static-loader-service
+              uri: lb://STATIC-LOADER-SERVICE
+              predicates:
+                - Path=/static/**
+              filters:
+                - StripPrefix=1
+
 eureka:
   client:
     fetch-registry: true
