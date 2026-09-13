@@ -14,7 +14,8 @@ build_service() {
     echo "========================================"
 
     cd "$BASE_DIR/$dir"
-    mvn clean package -DskipTests
+    chmod +x ./mvnw
+    ./mvnw clean package -DskipTests
 
     echo "✓ $name built successfully"
 }
@@ -31,8 +32,7 @@ echo "========================================"
 echo " Starting Docker Compose"
 echo "========================================"
 
-cd "$BASE_DIR"
-cd ../
+cd "$BASE_DIR/.."
 docker compose up -d
 
 echo
