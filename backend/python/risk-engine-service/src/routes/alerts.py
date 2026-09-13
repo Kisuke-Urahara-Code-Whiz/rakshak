@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from schemas import AlertRequest
-from services import process_alert
+from ..schemas import AlertRequest
+from ..services import process_alert
 
 router = APIRouter()
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from src.data_loader import df
-from src.spatial import find_closest_location
+from ..data_loader import df
+from ..spatial import find_closest_location
 
 router = APIRouter()
 

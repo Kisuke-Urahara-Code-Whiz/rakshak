@@ -1,7 +1,7 @@
 import numpy as np
 from fastapi import APIRouter
-from src.data_loader import spldf
-from src.spatial import SPLVal
+from ..data_loader import spldf
+from ..spatial import SPLVal
 
 router = APIRouter()
 

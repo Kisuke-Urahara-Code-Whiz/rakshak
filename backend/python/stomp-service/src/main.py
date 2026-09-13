@@ -2,9 +2,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.config import settings
-from src.eureka import init_eureka, stop_eureka
-from src.routes import stomp
+from .config import settings
+from .eureka import init_eureka, stop_eureka
+from .routes import stomp
 
 
 @asynccontextmanager
@@ -34,5 +34,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run("stomp_service.main:app", host="0.0.0.0", port=settings.SERVER_PORT, reload=True)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=settings.SERVER_PORT, reload=True)

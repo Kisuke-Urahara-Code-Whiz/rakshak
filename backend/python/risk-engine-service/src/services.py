@@ -1,5 +1,5 @@
-from schemas import AlertRequest
-from state import manager
+from .schemas import AlertRequest
+from .state import manager
 
 
 async def process_alert(req: AlertRequest):

@@ -235,7 +235,7 @@ services:
       - sih-network
 
   risk-engine-service:
-    image: risk-engine-service:1.0.0
+    image: risk-engine-service:1.0.21
     container_name: risk-engine-service
     build: ./python/risk-engine-service
 
@@ -262,14 +262,14 @@ services:
       - sih-network
 
   stomp-service:
-    image: stomp-service:1.0.0
+    image: stomp-service:1.0.10
     container_name: stomp-service
     build: ./python/stomp-service
 
     restart: unless-stopped
 
     healthcheck:
-      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')" ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -289,14 +289,14 @@ services:
       - sih-network
 
   static-loader-service:
-    image: static-loader-service:1.0.0
+    image: static-loader-service:1.0.10
     container_name: static-loader-service
     build: ./python/static-loader-service
 
     restart: unless-stopped
 
     healthcheck:
-      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" ]
       interval: 5s
       timeout: 3s
       retries: 10

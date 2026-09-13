@@ -1,5 +1,5 @@
 import pandas as pd
-from src.config import SPI_CSV_PATH, STATIC_FEATURES_CSV_PATH
+from .config import SPI_CSV_PATH, STATIC_FEATURES_CSV_PATH
 
 try:
     spldf = pd.read_csv(SPI_CSV_PATH)

@@ -2,8 +2,8 @@ import json
 import stomp
 from stomp.adapter.ws import WSStompConnection
 
-from src.config import settings
-from src.eureka import get_room_service_host_port
+from .config import settings
+from .eureka import get_room_service_host_port
 
 
 class MyListener(stomp.ConnectionListener):
