@@ -1,21 +1,39 @@
-build_service() (
+#!/usr/bin/env bash
+
+set -e
+
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+build_service() {
     local name="$1"
     local dir="$2"
 
-    echo "------ BUILDING $name ------"
-    cd "$dir"
+    echo
+    echo "========================================"
+    echo " Building $name"
+    echo "========================================"
+
+    cd "$BASE_DIR/$dir"
+    chmod +x ./mvnw
     ./mvnw clean package -DskipTests
-    echo "✓ $name built"
-)
 
-discovery() { build_service "DISCOVERY-SERVICE" "../java/discovery-service"; }
-gateway()   { build_service "GATEWAY-SERVICE"   "../java/gateway-service"; }
-media()     { build_service "MEDIA-SERVICE"     "../java/media-service"; }
-sms_test()  { build_service "SMS-TEST-SERVICE"  "../java/sms-test-service"; }
+    echo "✓ $name built successfully"
+}
 
-discovery
-gateway
-media
-sms_test
+build_service "DISCOVERY-SERVICE" "../java/discovery-service"
+build_service "GATEWAY-SERVICE" "../java/gateway-service"
+build_service "MEDIA-SERVICE" "../java/media-service"
+build_service "SQL-SERVICE" "../java/sql-service"
+build_service "SMS-SERVICE" "../java/sms-service"
+build_service "ROOM-SERVICE" "../java/room-service"
 
+echo
+echo "========================================"
+echo " Starting Docker Compose"
+echo "========================================"
+
+cd "$BASE_DIR/.."
 docker compose up -d
+
+echo
+echo "✓ All services started"

@@ -1,0 +1,7 @@
+py-eureka-client
+fastapi
+uvicorn[standard]
+pydantic
+requests
+stomp.py
+pydantic_settings

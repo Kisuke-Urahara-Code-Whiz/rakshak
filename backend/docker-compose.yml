@@ -1,7 +1,7 @@
 services:
 
   gateway-service:
-    image: sih-gateway-service:2.0.5
+    image: sih-gateway-service:3.0.0
     container_name: gateway-service
     build: ./java/gateway-service
 
@@ -27,6 +27,12 @@ services:
       sms-service:
         condition: service_healthy
       room-service:
+        condition: service_healthy
+      risk-engine-service:
+        condition: service_healthy
+      stomp-service:
+        condition: service_healthy
+      static-loader-service:
         condition: service_healthy
 
     networks:
@@ -224,6 +230,85 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+    networks:
+      - sih-network
+
+  risk-engine-service:
+    image: risk-engine-service:1.0.21
+    container_name: risk-engine-service
+    build: ./python/risk-engine-service
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+    environment:
+      EUREKA_HOST: discovery-service
+      EUREKA_PORT: 5000
+
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      sms-service:
+        condition: service_healthy
+
+    networks:
+      - sih-network
+
+  stomp-service:
+    image: stomp-service:1.0.10
+    container_name: stomp-service
+    build: ./python/stomp-service
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+    environment:
+      EUREKA_HOST: discovery-service
+      EUREKA_PORT: 5000
+
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      room-service:
+        condition: service_healthy
+
+    networks:
+      - sih-network
+
+  static-loader-service:
+    image: static-loader-service:1.0.10
+    container_name: static-loader-service
+    build: ./python/static-loader-service
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+    environment:
+      EUREKA_HOST: discovery-service
+      EUREKA_PORT: 5000
+
+    depends_on:
+      discovery-service:
+        condition: service_healthy
 
     networks:
       - sih-network
