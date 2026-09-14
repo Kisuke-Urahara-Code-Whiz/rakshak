@@ -70,7 +70,7 @@ export default function Dash() {
       const lat = initialData.lat || localStorage.getItem("lastClick") ? JSON.parse(localStorage.getItem("lastClick")).lat : 23.7271;
       const lon = initialData.lon || localStorage.getItem("lastClick") ? JSON.parse(localStorage.getItem("lastClick")).lng : 91.72;
       // Fixed parameter name from 'long' to 'llong'
-      const url = `http://127.0.0.1:8082/static-features?lat=${lat}&llong=${lon}`;
+      const url = `http://localhost:5001/static/static-features?lat=${lat}&llong=${lon}`;
 
       const res = await fetch(url);
       if (res.ok) {

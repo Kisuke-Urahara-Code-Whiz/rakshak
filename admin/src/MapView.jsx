@@ -80,7 +80,7 @@ export default function MapView() {
   useEffect(() => {
     const fetchLiveData = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/live-data");
+        const res = await fetch("http://localhost:5001/risk/api/live-data");
         if (res.ok) setRiskData(await res.json());
       } catch (err) { console.error("Polling error:", err); }
     };
