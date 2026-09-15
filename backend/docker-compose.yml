@@ -20,8 +20,6 @@ services:
         condition: service_healthy
       media-service:
         condition: service_healthy
-      sms-test-service:
-        condition: service_healthy
       sql-service:
         condition: service_healthy
       sms-service:
@@ -141,36 +139,6 @@ services:
       discovery-service:
         condition: service_healthy
       postgres:
-        condition: service_healthy
-
-    networks:
-      - sih-network
-
-  sms-test-service:
-    image: sms-test-service:1.0.0
-    container_name: sms-test-service
-    build: ./java/sms-test-service
-
-    restart: unless-stopped
-
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/actuator/health" ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
-
-    environment:
-      EUREKA_SERVER_HOST: discovery-service
-      EUREKA_SERVER_PORT: 5000
-      SPRING_PROFILES_ACTIVE: docker
-      SMS_DEVICE_IP: ${SMS_DEVICE_IP}
-      SMS_DEVICE_PORT: ${SMS_DEVICE_PORT}
-      SMS_DEVICE_USERNAME: ${SMS_DEVICE_USERNAME}
-      SMS_DEVICE_PASSWORD: ${SMS_DEVICE_PASSWORD}
-
-    depends_on:
-      discovery-service:
         condition: service_healthy
 
     networks:
