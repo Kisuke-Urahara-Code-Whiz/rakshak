@@ -133,7 +133,7 @@ export const MODEL_COMPARISON_DATA = {
     },
     {
       id: "smartscan_xgboost",
-      model: "SmartScan XGBoost (Proposed)",
+      model: "Rakshak",
       category: "IoT + XGBoost",
       badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-300 font-black",
       accuracy: 95.0,
