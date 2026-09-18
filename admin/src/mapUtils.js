@@ -49,8 +49,6 @@ export function getRegionAnalytics(name = 'North East India') {
 
   const scores = {
     landslide: hazardLevels[h % 3],
-    river_flood: hazardLevels[(h + 1) % 4],
-    earthquake: hazardLevels[(h + 2) % 3],
     vegetation: vegLevels[(h + 3) % 4],
     soil_type: soilLevels[(h + 4) % 4],
     terrain: terrainLevels[(h + 5) % 4],

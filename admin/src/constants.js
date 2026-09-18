@@ -28,8 +28,6 @@ export const TERRAIN_COLORS = {
 
 export const PARAMETER_TYPES = [
   { id: 'landslide', label: 'Landslide', group: 'hazard', palette: HAZARD_COLORS },
-  { id: 'river_flood', label: 'River flood', group: 'hazard', palette: HAZARD_COLORS },
-  { id: 'earthquake', label: 'Earthquake', group: 'hazard', palette: HAZARD_COLORS },
   { id: 'vegetation', label: 'Vegetation', group: 'env', palette: VEGETATION_COLORS },
   { id: 'soil_type', label: 'Soil type', group: 'env', palette: SOIL_COLORS },
   { id: 'terrain', label: 'Terrain', group: 'env', palette: TERRAIN_COLORS },
