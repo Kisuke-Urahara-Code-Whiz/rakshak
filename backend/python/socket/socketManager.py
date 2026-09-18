@@ -4,7 +4,7 @@ from datetime import datetime
 
 router = APIRouter()
 
-def tel(realsoil: float, vibration: float):
+def tel(realsoil: float, vibration: float,riskPercentage: float):
     # Ensure vibration is float
     if vibration is None:
         vibration = 0.0
@@ -14,7 +14,7 @@ def tel(realsoil: float, vibration: float):
         except (ValueError, TypeError):
             vibration = 0.0
 
-    risk_pct = max(0, min(100, int((500 - realsoil) / 3.5 + (vibration * 30))))
+    risk_pct = riskPercentage
     sms_logs = []
 
     if risk_pct > 50 or realsoil < 200:
@@ -98,7 +98,7 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
             print(f"[SOIL] Value: {soil_value} | Vibration: {vibration_val}")
             
             # Generate Telemetry Update Payload
-            telemetry_payload = tel(soil_value, vibration_val)
+            telemetry_payload = tel(soil_value, vibration_val,float(data_in.get("riskPercentage")))
 
             # ALERT TRIGGER
             if soil_value < 200:

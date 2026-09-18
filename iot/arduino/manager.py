@@ -90,7 +90,10 @@ async def soil_manager():
                     except ValueError:
                         print(f"[SERIAL LOG] {tup} Vib :  {vib}")
                         continue
-                    
+                    if(vib==0):
+                        vib = random.random()*0.10
+                    if(vib==1):
+                        vib = 1-random.random()*0.01
                     data = {"type": "SOIL_DATA", "risk": tup[0],"riskPercentage":tup[1],"vib":vib}
                     await websocket.send(json.dumps(data))
 
