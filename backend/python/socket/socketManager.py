@@ -7,6 +7,7 @@ router = APIRouter()
 async def websocket_soil(websocket: WebSocket, client_id: str):
     manager = websocket.app.state.manager
     soil_queue = websocket.app.state.soil_queue
+    riskJson = websocket.app.state.riskTemp
     await manager.connect("SOIL", client_id, websocket)
     print(f"[WS] Connected: SOIL Manager '{client_id}'")
 
@@ -44,7 +45,8 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                     "duration_ms": 2000,
                 }
                 print(f"🚨 [ALERT] Threshold breached! Soil value = {soil_value}")
-                await manager.broadcast_to_role(json.dumps(alert_message), "ESP")
+                await manager.broadcast_to_role(json.dumps(alert_message), "ESP")                
+                await manager.broadcast_to_role(json.dumps(riskJson), "FRONT")
 
     except WebSocketDisconnect:
         print(f"[WS] Disconnected: SOIL Manager '{client_id}'")
