@@ -1,13 +1,53 @@
 from fastapi import APIRouter, WebSocket,WebSocketDisconnect
 import json
+from datetime import datetime
 router = APIRouter()
 
+def tel(websocket):
+    realsoil = websocket.app.state.real_soil
+    vibration = websocket.app.state.vibration
+    risk_pct = max(0, min(100, int((500 - realsoil) / 3.5 + (vibration * 30))))
+    sms_logs = []
+    if risk_pct > 50 or realsoil < 200:
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        sms_logs = [
+            {
+                "id": 1,
+                "recipient": "+919830123456",
+                "status": "SENT",
+                "type": "Registered User",
+                "timestamp": timestamp,
+                "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+            },
+            {
+                "id": 2,
+                "recipient": "+919874987654",
+                "status": "SENT",
+                "type": "Unregistered User",
+                "timestamp": timestamp,
+                "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+            }
+        ]
+        
+    payload = {
+        "type": "TELEMETRY_UPDATE",
+        "soil_moisture": realsoil,
+        "vibration": vibration,
+        "risk_percentage": risk_pct,
+        "rainfall_rate": round(realsoil * 0.12, 1),  # directly proportional
+        "sms_logs": sms_logs,
+        "timestamp": datetime.now().strftime("%H:%M:%S")
+    }
+    return payload
+    
 
 @router.websocket("/ws/soil/{client_id}")
 async def websocket_soil(websocket: WebSocket, client_id: str):
     manager = websocket.app.state.manager
     soil_queue = websocket.app.state.soil_queue
     riskJson = websocket.app.state.riskTemp
+    #realsoil = websocket.app.state.real_soil
+    #vibration = websocket.app.state.vibration
     await manager.connect("SOIL", client_id, websocket)
     print(f"[WS] Connected: SOIL Manager '{client_id}'")
 
@@ -36,8 +76,11 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                 continue
 
             soil_queue.append(soil_value)
-            print(f"[SOIL] Value: {soil_value} | Queue size: {len(soil_queue)}/50")
-
+            realsoil = soil_value
+            vibration = payload.get("vib")
+            print(f"[SOIL] Value: {soil_value} |Real Soil: {realsoil}|Vibration :{vibration}")
+            payload = tel(websocket)
+            print(payload)
             # ALERT TRIGGER
             if soil_value < 200:
                 alert_message = {
@@ -46,7 +89,7 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                 }
                 print(f"🚨 [ALERT] Threshold breached! Soil value = {soil_value}")
                 await manager.broadcast_to_role(json.dumps(alert_message), "ESP")                
-                await manager.broadcast_to_role(json.dumps(riskJson), "FRONT")
+            await manager.broadcast_to_role(payload, "FRONT")
 
     except WebSocketDisconnect:
         print(f"[WS] Disconnected: SOIL Manager '{client_id}'")

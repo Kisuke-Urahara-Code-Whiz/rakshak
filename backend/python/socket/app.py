@@ -14,6 +14,8 @@ async def lifespan(app: FastAPI):
     app.state.riskTemp = data
     app.state.manager = ConnectionManager()
     app.state.soil_queue = deque(maxlen=50)
+    app.state.real_soil = 350
+    app.state.vibration = 0.1
     yield
 
 app = FastAPI(lifespan=lifespan)
