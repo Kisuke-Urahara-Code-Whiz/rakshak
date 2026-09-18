@@ -34,6 +34,3 @@ echo "========================================"
 cd "$BASE_DIR"
 cd ../
 docker compose up -d
-
-echo
-echo "✓ All services started"

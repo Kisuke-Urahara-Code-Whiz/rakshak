@@ -4,10 +4,11 @@ import { Header } from '@/components/Header';
 import { VisualEvidenceCard } from '@/components/VisualEvidenceCard';
 import { VoiceMemoCard } from '@/components/VoiceMemoCard';
 import { VulnerabilityCard } from '@/components/VulnerabilityCard';
+import { findClosestKiosk } from '@/data/kiosks';
 import { useRiskWebSocket } from '@/hooks/useRiskWebSocket';
 import { useTelemetry } from '@/hooks/useTelemetry';
 import { i18n } from '@/services/i18n';
-import { getFileExtension, uploadMediaEvidence, escalateOfficialAlert } from '@/services/telemetryApi';
+import { getFileExtension, uploadMediaEvidence, escalateOfficialAlert, updateCitizenLanguage } from '@/services/telemetryApi';
 import { SupportedLanguage, useAppStore } from '@/stores/useAppStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect } from 'expo-router';
@@ -47,7 +48,14 @@ export default function HomeScreen() {
   if (!phoneNumber && !employeeId) return <Redirect href={'/' as any} />;
 
   const isCitizen = userRole === 'Citizen';
-  const activeIdentifier = phoneNumber || '9832041182';
+  const activeIdentifier = (phoneNumber ? phoneNumber.replace(/\D/g, '') : '') || '9832041182';
+
+  // Calculate nearest North Eastern emergency kiosk (defaults to Aizawl ADM5-Node 40)
+  const closestKioskData = findClosestKiosk(location?.latitude, location?.longitude);
+  const { kiosk: closestKiosk, distanceKm } = closestKioskData;
+
+  // Enforce baseline risk value of 35
+  const effectiveRisk = (riskScore !== undefined && riskScore !== null && riskScore > 0) ? riskScore : 35;
 
   const handleExit = async () => {
     try {
@@ -63,7 +71,6 @@ export default function HomeScreen() {
     setIsSendingPhoto(true);
     try {
       const coords = await fetchFreshCoordinates();
-      if (!coords) return;
       const ext = getFileExtension(photoUri, 'PNG');
       const res = await uploadMediaEvidence(photoUri, activeIdentifier, ext, coords);
 
@@ -82,7 +89,6 @@ export default function HomeScreen() {
     setIsSendingAudio(true);
     try {
       const coords = await fetchFreshCoordinates();
-      if (!coords) return;
       const ext = getFileExtension(voiceUri, 'M4A');
       const res = await uploadMediaEvidence(voiceUri, activeIdentifier, ext, coords);
 
@@ -100,28 +106,29 @@ export default function HomeScreen() {
     setEscalated(true);
     setRiskScore(85);
     try {
-      const coords = await fetchFreshCoordinates();
       await escalateOfficialAlert({
         employeeId,
         role: userRole,
         userName,
         department,
-        district: 'North Sikkim',
-        state: 'Sikkim',
-        latitude: coords?.latitude || location?.latitude || 27.6328,
-        longitude: coords?.longitude || location?.longitude || 88.9482,
-        message: `MDoNER CRITICAL ESCALATION: Emergency evacuation ordered by ${userRole} (${userName || employeeId}). Real-time landslide hazard active.`,
+        kioskId: closestKiosk.id,
+        kioskName: closestKiosk.name,
+        district: closestKiosk.district,
+        state: closestKiosk.state,
+        latitude: closestKiosk.lat,
+        longitude: closestKiosk.lng,
+        message: `MDoNER CRITICAL ESCALATION: Emergency evacuation ordered by ${userRole} (${userName || employeeId}). Alert directed to ${closestKiosk.name} (${closestKiosk.id}), ${closestKiosk.district}, ${closestKiosk.state}.`,
         riskScore: 90,
       });
       Alert.alert(
         'CRITICAL ESCALATION BROADCASTED',
-        `Official alert transmitted to central authorities command and public kiosks. Sirens & sirens dispatch active.`
+        `Official alert transmitted to ${closestKiosk.name} (${closestKiosk.district}, ${closestKiosk.state}). Emergency kiosk sirens and telemetry broadcast active.`
       );
     } catch (err: any) {
       console.warn('Official escalation network error:', err);
       Alert.alert(
         'CRITICAL ESCALATION TRIGGERED',
-        `Official incident alert broadcasted locally by ${userRole} (${userName || employeeId}).`
+        `Official incident alert broadcasted locally by ${userRole} (${userName || employeeId}) targeted at ${closestKiosk.name}.`
       );
     }
   };
@@ -152,6 +159,10 @@ export default function HomeScreen() {
                   onPress={() => {
                     setLanguage(lang.code as SupportedLanguage);
                     i18n.setLanguage(lang.code);
+                    // Dispatches PUT /sql/citizen/language to update regional dialect on backend
+                    updateCitizenLanguage(activeIdentifier, lang.code, 'OLD').catch((err) => {
+                      console.warn('Language update PUT failed:', err?.message || err);
+                    });
                   }}
                   className={`mr-2 px-3 py-1.5 border flex-row items-center ${
                     isSelected
@@ -171,6 +182,47 @@ export default function HomeScreen() {
               );
             })}
           </ScrollView>
+        </View>
+
+        {/* Nearest Emergency Public Kiosk */}
+        <View className="bg-white border border-[#e0e0e0] border-l-4 border-l-[#d93850] p-4 mb-4 shadow-sm">
+          <View className="flex-row items-center justify-between pb-2 border-b border-[#e0e0e0] mb-2">
+            <View className="flex-row items-center gap-1.5">
+              <View className="w-2.5 h-2.5 rounded-full bg-[#d93850]" />
+              <Text className="text-[10px] font-black uppercase tracking-widest text-[#d93850]">
+                Nearest Emergency Kiosk
+              </Text>
+            </View>
+            <View className="bg-[#1a1a1a] px-2 py-0.5">
+              <Text className="text-[9px] font-mono font-black text-[#f6d274] uppercase">
+                {distanceKm} KM AWAY
+              </Text>
+            </View>
+          </View>
+
+          <View className="mb-2">
+            <Text className="text-sm font-black text-[#1a1a1a] uppercase tracking-wide">
+              {closestKiosk.name}
+            </Text>
+            <Text className="text-[11px] font-bold text-slate-600 mt-0.5">
+              📍 {closestKiosk.adm5 || closestKiosk.district}, {closestKiosk.state} • {closestKiosk.id}
+            </Text>
+            <Text className="text-[10px] text-slate-500 mt-1 font-mono">
+              GPS: {closestKiosk.lat.toFixed(4)}°N, {closestKiosk.lng.toFixed(4)}°E • {closestKiosk.type}
+            </Text>
+          </View>
+
+          <View className="bg-[#f8f9fa] p-2 border border-[#e9ecef] flex-row items-center justify-between">
+            <View className="flex-row items-center gap-1">
+              <Text className="text-[10px] font-black text-emerald-700 uppercase">● Online</Text>
+              <Text className="text-[10px] text-slate-600 font-bold ml-1">
+                {closestKiosk.sensorsActive} Active Sensors
+              </Text>
+            </View>
+            <Text className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+              Siren & PA Ready
+            </Text>
+          </View>
         </View>
         
         {/* Official Staff Operations Banner */}
@@ -194,8 +246,8 @@ export default function HomeScreen() {
 
             <View className="pt-2 flex-row justify-between items-center">
               <View>
-                <Text className="text-[10px] text-slate-500 font-bold uppercase">Department</Text>
-                <Text className="text-xs font-bold text-slate-800">{department || 'NER Geotechnical Cell'}</Text>
+                <Text className="text-[10px] text-slate-500 font-bold uppercase">Target Kiosk</Text>
+                <Text className="text-xs font-bold text-slate-800">{closestKiosk.name} ({closestKiosk.state})</Text>
               </View>
               <TouchableOpacity
                 onPress={handleOfficialEscalation}
@@ -210,10 +262,10 @@ export default function HomeScreen() {
         )}
 
         {/* Dynamic Threat Vulnerability Index */}
-        <VulnerabilityCard riskScore={riskScore} />
+        <VulnerabilityCard riskScore={effectiveRisk} />
 
         {/* Critical Emergency Advisory (Active when riskScore >= 70) */}
-        <CriticalAdvisoryCard riskScore={riskScore} />
+        <CriticalAdvisoryCard riskScore={effectiveRisk} />
 
         {/* Sensor & GPS Telemetry */}
         <CoordinatesCard location={location} locating={locating} onRefresh={handleManualGpsRefresh} />

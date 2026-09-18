@@ -60,8 +60,15 @@ export default function UploadsTable({
                           📞
                         </span>
                         <div>
-                          <div className="font-mono font-black text-slate-900 text-sm tracking-wide">
-                            {item.phoneNumber}
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-black text-slate-900 text-sm tracking-wide">
+                              {item.phoneNumber}
+                            </span>
+                            {(item.isLiveSubmission || item.id?.startsWith('UPL-MB-')) && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 border border-emerald-400 text-emerald-800 text-[9px] font-black uppercase rounded animate-pulse">
+                                ⚡ LIVE APP UPLOAD
+                              </span>
+                            )}
                           </div>
                           <div className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
                             ID: {item.id}

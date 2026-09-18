@@ -131,11 +131,26 @@ export async function uploadMediaEvidence(
 
   const formData = new FormData();
 
-  formData.append('file', {
-    uri: normalizedUri,
-    type: mimeType,
-    name: fileName,
-  } as any);
+  if (Platform.OS === 'web') {
+    try {
+      const res = await fetch(fileUri);
+      const blob = await res.blob();
+      formData.append('file', blob, fileName);
+    } catch (fetchErr) {
+      console.warn('Web blob fetch fallback:', fetchErr);
+      formData.append('file', {
+        uri: normalizedUri,
+        type: mimeType,
+        name: fileName,
+      } as any);
+    }
+  } else {
+    formData.append('file', {
+      uri: normalizedUri,
+      type: mimeType,
+      name: fileName,
+    } as any);
+  }
 
   formData.append('number', String(phoneNumber));
   formData.append('fileType', fileType);
@@ -144,6 +159,7 @@ export async function uploadMediaEvidence(
   formData.append('lat', String(coords.latitude));
   formData.append('lon', String(coords.longitude));
 
+  console.log(API_BASE_URL, 'Uploading media evidence with formData:', formData);
   return axios.post(`${API_BASE_URL}/media/upload`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -158,6 +174,8 @@ export async function escalateOfficialAlert(payload: {
   role?: string | null;
   userName?: string | null;
   department?: string | null;
+  kioskId?: string;
+  kioskName?: string;
   district?: string;
   state?: string;
   latitude?: number;

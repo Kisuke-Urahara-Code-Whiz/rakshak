@@ -135,6 +135,7 @@ export const useAppStore = create<AppState>()(
           photoUri: null,
           voiceUri: null,
           location: null,
+          riskScore: 35,
         }),
     }),
     {
