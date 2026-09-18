@@ -42,7 +42,7 @@ export default function RegionDetailsDialog({
         </button>
       </div>
 
-      <div className="p-3 grid grid-cols-6 gap-2 bg-white text-center">
+      <div className="p-3 grid grid-cols-4 gap-2 bg-white text-center">
         <div className="bg-[#f8fafc] p-2 flex flex-col justify-between border border-[#e2e8f0]">
           <div className="text-[9px] font-black uppercase tracking-wider text-[#64748b]">Overall Risk</div>
           <div className="text-xs font-black uppercase mt-1" style={{ color: HAZARD_COLORS[da.overallRisk] }}>{da.overallRisk}</div>
