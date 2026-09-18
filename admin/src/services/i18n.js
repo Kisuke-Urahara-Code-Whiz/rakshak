@@ -13,6 +13,7 @@ export const TRANSLATIONS = {
     nav_reports: 'Reports',
     nav_uploads: 'Uploads',
     nav_media: 'Media',
+    nav_model_comparison: 'AI Models',
     nav_sign_out: 'Sign Out',
     
     // Status Bar
@@ -66,6 +67,7 @@ export const TRANSLATIONS = {
     nav_reports: 'प्रतिवेदन',
     nav_uploads: 'अपलोड',
     nav_media: 'मीडिया',
+    nav_model_comparison: 'एआई मॉडल',
     nav_sign_out: 'साइन आउट',
     
     // Status Bar
@@ -119,6 +121,7 @@ export const TRANSLATIONS = {
     nav_reports: 'প্ৰতিবেদনসমূহ',
     nav_uploads: 'আপলোডসমূহ',
     nav_media: 'মিডিয়া',
+    nav_model_comparison: 'এআই মডেল',
     nav_sign_out: 'প্ৰস্থান',
     
     // Status Bar
@@ -172,6 +175,7 @@ export const TRANSLATIONS = {
     nav_reports: 'প্রতিবেদন',
     nav_uploads: 'আপলোড',
     nav_media: 'মিডিয়া',
+    nav_model_comparison: 'এআই মডেল',
     nav_sign_out: 'সাইন আউট',
     
     // Status Bar

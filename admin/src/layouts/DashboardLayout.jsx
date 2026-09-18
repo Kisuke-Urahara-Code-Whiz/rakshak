@@ -123,6 +123,16 @@ export default function DashboardLayout() {
                 {t('nav_media')}
               </span>
             </Link>
+
+            <Link 
+              to="/app/model-comparison" 
+              className={`text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 ${location.pathname.includes('model-comparison') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
+            >
+              <span>{t('nav_model_comparison') || 'AI Models'}</span>
+              <span className="text-[9px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 rounded font-black uppercase">
+                SOTA
+              </span>
+            </Link>
           </nav>
         </div>
 

@@ -9,6 +9,7 @@ import Stations from './pages/Stations';
 import Alerts from './pages/Alerts';
 import Reports from './pages/Reports';
 import Uploads from './pages/Uploads';
+import ModelComparison from './pages/ModelComparison';
 import { AlertProvider } from './context/AlertContext';
 import { LanguageProvider } from './context/LanguageContext';
 
@@ -21,6 +22,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/model-comparison" element={<Navigate to="/app/model-comparison" replace />} />
             <Route path="/app" element={<DashboardLayout />}>
               <Route path="risk-map" element={<RiskMap />} />
               <Route path="about" element={<About />} />
@@ -28,6 +30,7 @@ export default function App() {
               <Route path="alerts" element={<Alerts />} />
               <Route path="reports" element={<Reports />} />
               <Route path="uploads" element={<Uploads />} />
+              <Route path="model-comparison" element={<ModelComparison />} />
               <Route index element={<Navigate to="risk-map" replace />} />
             </Route>
           </Routes>
