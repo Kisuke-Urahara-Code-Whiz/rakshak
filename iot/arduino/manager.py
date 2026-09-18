@@ -35,6 +35,8 @@ def trunk(val):
         val = 250 + random.randint(-25, 10)
     if val >= 250 and val < 350:
         risk = 35.0 + random.randint(-1, 6)
+    if val >= 350 and val <=450:
+        risk = 25.0 + random.randint(-1, 6)
     if val > 450:
         risk = 20.0 + random.randint(0, 6)
         val = 450 + random.randint(-5, 5)
@@ -78,20 +80,24 @@ async def soil_manager():
 
                     if not line:
                         continue
-
+                    l = line.split("|")
+                    line = l[0]
+                    vib = int(l[1])
+                    tup = (969,96.99)
                     try:
                         risk_value = int(line)
+                        tup = trunk(risk_value)
                     except ValueError:
-                        print(f"[SERIAL LOG] {line}")
+                        print(f"[SERIAL LOG] {tup} Vib :  {vib}")
                         continue
-                    tup = trunk(risk_value)
-                    data = {"type": "SOIL_DATA", "risk": tup[0],"riskPercentage":tup[1]}
+                    
+                    data = {"type": "SOIL_DATA", "risk": tup[0],"riskPercentage":tup[1],"vib":vib}
                     await websocket.send(json.dumps(data))
 
                     if risk_value < RISK_THRESHOLD:
                         print(f"[SOIL] Risk: {risk_value:3} --> 🚨 BELOW THRESHOLD")
                     else:
-                        print(f"[SOIL] Risk: {risk_value:3}")
+                        print(f"[SOIL] Risk: {risk_value:3} Vib : {vib}")
 
                     try:
                         response = await asyncio.wait_for(websocket.recv(), timeout=0.01)
