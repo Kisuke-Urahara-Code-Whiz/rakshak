@@ -23,7 +23,7 @@ module.exports = {
     },
     web: {
       output: 'static',
-      favicon: './assets/images/favicon.png',
+      favicon: './assets/images/LogoV3.png',
       bundler: 'metro',
     },
     plugins: [
@@ -32,7 +32,7 @@ module.exports = {
         'expo-splash-screen',
         {
           backgroundColor: '#FFFFFF',
-          image: './assets/images/logo.png',
+          image: './assets/images/LogoV3.png',
           imageWidth: 250,
         },
       ],
