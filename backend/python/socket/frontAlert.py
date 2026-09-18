@@ -31,7 +31,7 @@ async def websocket_front(websocket: WebSocket, client_id: str):
                 payload = {}
 
             req_type = payload.get("type")
-
+            '''
             # 1. Handle Initial Query from React Frontend
             if req_type == "INIT_QUERY":
                 lat = payload.get("latitude")
@@ -52,9 +52,9 @@ async def websocket_front(websocket: WebSocket, client_id: str):
                     "rainfall_rate": round(soil_val * 0.12, 1),
                     "timestamp": datetime.now().strftime("%H:%M:%S")
                 })
-
+            '''
             # 2. Handle Client PONG Heartbeat Response
-            elif req_type == "PONG":
+            if req_type == "PONG":
                 pass
 
             print(
