@@ -43,7 +43,7 @@ def tel(realsoil: float, vibration: float,riskPercentage: float):
         "soil_moisture": realsoil,
         "vibration": vibration,
         "risk_percentage": risk_pct,
-        "rainfall_rate": round(realsoil * 0.12, 1),  # directly proportional
+        "rainfall_rate": round((480-realsoil) * 0.12, 1),  # directly proportional
         "sms_logs": sms_logs,
         "timestamp": datetime.now().strftime("%H:%M:%S")
     }
