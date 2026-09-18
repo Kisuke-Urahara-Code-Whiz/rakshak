@@ -22,25 +22,54 @@ public class RoomService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public static final String BROADCAST_TOPIC = "/topic/risk";
+    private static final java.util.concurrent.atomic.AtomicLong LAST_AUTO_ALERT_TIME = new java.util.concurrent.atomic.AtomicLong(0);
 
     public void broadcastRisk(String riskValue) {
         RiskAlertMessage payload = new RiskAlertMessage(riskValue);
         messagingTemplate.convertAndSend(BROADCAST_TOPIC, payload);
         log.info("Broadcasted risk value [{}] to topic {}", riskValue, BROADCAST_TOPIC);
+
+        // If risk is critical (>= 75%), automatically trigger official escalation alert for Unakoti ADM5-Node 85
+        try {
+            double riskNum = Double.parseDouble(riskValue);
+            if (riskNum >= 75.0) {
+                long now = System.currentTimeMillis();
+                long last = LAST_AUTO_ALERT_TIME.get();
+                if (now - last > 60_000L && LAST_AUTO_ALERT_TIME.compareAndSet(last, now)) {
+                    log.warn("Critical risk detected ({}%). Auto-dispatching official alert for Unakoti ADM5-Node 85", riskNum);
+                    OfficialEscalationRequestDto autoDto = OfficialEscalationRequestDto.builder()
+                            .district("Unakoti")
+                            .state("Tripura")
+                            .latitude(23.7548)
+                            .longitude(92.4273)
+                            .riskScore((int) Math.round(riskNum))
+                            .userName("IoT Automated Station")
+                            .role("Automated Telemetry Sensor")
+                            .message(String.format("CRITICAL TACTICAL ALERT: Landslide risk critical (%s%%). Automated evacuation warning for Unakoti, Tripura (Node 85).", riskValue))
+                            .build();
+                    broadcastOfficialEscalationInternal(autoDto, false);
+                }
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     public Map<String, Object> broadcastOfficialEscalation(OfficialEscalationRequestDto dto) {
-        String district = (dto.getDistrict() != null && !dto.getDistrict().isBlank()) ? dto.getDistrict() : "North Sikkim";
-        String state = (dto.getState() != null && !dto.getState().isBlank()) ? dto.getState() : "Sikkim";
-        double lat = dto.getLatitude() != null ? dto.getLatitude() : 27.6328;
-        double lon = dto.getLongitude() != null ? dto.getLongitude() : 88.9482;
-        int riskScore = dto.getRiskScore() != null ? dto.getRiskScore() : 85;
-        String sender = (dto.getUserName() != null ? dto.getUserName() : (dto.getEmployeeId() != null ? dto.getEmployeeId() : "Official Field Command"));
-        String role = dto.getRole() != null ? dto.getRole() : "MDoNER Employee";
+        return broadcastOfficialEscalationInternal(dto, true);
+    }
+
+    private Map<String, Object> broadcastOfficialEscalationInternal(OfficialEscalationRequestDto dto, boolean broadcastBackToRiskTopic) {
+        String district = (dto.getDistrict() != null && !dto.getDistrict().isBlank()) ? dto.getDistrict() : "Unakoti";
+        String state = (dto.getState() != null && !dto.getState().isBlank()) ? dto.getState() : "Tripura";
+        double lat = dto.getLatitude() != null ? dto.getLatitude() : 23.7548;
+        double lon = dto.getLongitude() != null ? dto.getLongitude() : 92.4273;
+        int riskScore = dto.getRiskScore() != null ? dto.getRiskScore() : 92;
+        String sender = (dto.getUserName() != null ? dto.getUserName() : (dto.getEmployeeId() != null ? dto.getEmployeeId() : "IoT Node 85"));
+        String role = dto.getRole() != null ? dto.getRole() : "Automated Sensor Post";
 
         String message = dto.getMessage() != null && !dto.getMessage().isBlank()
                 ? dto.getMessage()
-                : String.format("CRITICAL TACTICAL ESCALATION: Siren & public evacuation engaged by %s (%s). Severe slope displacement imminent.", sender, role);
+                : String.format("CRITICAL TACTICAL ESCALATION: Severe landslide risk & pore-pressure saturation detected at Unakoti ADM5-Node 85 (%s, %s). Evacuation protocol active.", district, state);
 
         Map<String, Object> coordinates = Map.of(
                 "lat", lat,
@@ -48,15 +77,20 @@ public class RoomService {
         );
 
         Map<String, Object> kiosk = new HashMap<>();
-        kiosk.put("id", "KIO-SK-OFFICIAL-" + (System.currentTimeMillis() % 1000));
-        kiosk.put("name", String.format("Tactical Command (%s)", sender));
+        kiosk.put("id", "KIO-TR-085");
+        kiosk.put("name", "Unakoti ADM5-Node 85");
         kiosk.put("district", district);
         kiosk.put("state", state);
-        kiosk.put("elevation", "2,480m");
+        kiosk.put("subDivision", "Unakoti Sub-Division");
+        kiosk.put("adm5", "Locality Block 85 - Unakoti");
+        kiosk.put("elevation", "680m");
         kiosk.put("coordinates", coordinates);
+        kiosk.put("lat", lat);
+        kiosk.put("lng", lon);
         kiosk.put("status", "Warning");
         kiosk.put("riskLevel", "High");
-        kiosk.put("type", "Official Tactical Field Command");
+        kiosk.put("type", "Seismic & Wind Sensor Post");
+        kiosk.put("sensorsActive", 4);
         kiosk.put("reportedBy", sender);
         kiosk.put("operatorRole", role);
 
@@ -76,13 +110,16 @@ public class RoomService {
         try {
             String jsonString = objectMapper.writeValueAsString(alertEvent);
 
-            // 1. Broadcast to all Web Admin raw WebSocket clients
+            // 1. Broadcast to all Web Admin raw WebSocket clients (Alerts page & RiskMap)
             rawAlertWebSocketHandler.broadcast(jsonString);
 
             // 2. Broadcast to all STOMP mobile subscribers
-            broadcastRisk(String.valueOf(riskScore));
+            if (broadcastBackToRiskTopic) {
+                RiskAlertMessage payload = new RiskAlertMessage(String.valueOf(riskScore));
+                messagingTemplate.convertAndSend(BROADCAST_TOPIC, payload);
+            }
 
-            log.info("Successfully dispatched live real-time official alert for region: {}", district);
+            log.info("Successfully dispatched live real-time official alert for kiosk: Unakoti ADM5-Node 85 ({}, {})", district, state);
         } catch (Exception e) {
             log.error("Failed to serialize or broadcast official alert: {}", e.getMessage());
         }

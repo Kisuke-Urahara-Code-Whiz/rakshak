@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageHeader from '../components/common/PageHeader';
 import TowerBroadcastCard from '../components/alerts/TowerBroadcastCard';
 import SmsDispatchLog from '../components/alerts/SmsDispatchLog';
@@ -8,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import ENV from '../config/env';
 
 const NE_ALERT_TARGETS = [
+  { label: 'Unakoti (Tripura) - Node 85', state: 'Tripura', district: 'Unakoti', lat: 23.7548, lng: 92.4273, kioskId: 'KIO-TR-085' },
   { label: 'Aizawl (Mizoram)', state: 'Mizoram', district: 'Aizawl', lat: 23.3644, lng: 93.3005, kioskId: 'KIO-MZ-040' },
   { label: 'North Sikkim (Sikkim)', state: 'Sikkim', district: 'North Sikkim', lat: 27.6328, lng: 88.9482, kioskId: 'KIO-SK-093' },
   { label: 'Sonitpur (Assam)', state: 'Assam', district: 'Sonitpur', lat: 26.1637, lng: 92.3619, kioskId: 'KIO-AS-001' },
@@ -106,6 +108,22 @@ export default function Alerts() {
             <span>{isDispatching ? 'Dispatching...' : `Alert ${selectedTarget.state}`}</span>
           </button>
 
+          <Link
+            to="/app/analytics"
+            onClick={() => {
+              const targetLat = activeAlert?.lat || selectedTarget.lat;
+              const targetLng = activeAlert?.lng || selectedTarget.lng;
+              const name = activeAlert?.name || selectedTarget.label;
+              localStorage.setItem('latitude', String(targetLat));
+              localStorage.setItem('longitude', String(targetLng));
+              localStorage.setItem('towerName', name);
+            }}
+            className="bg-[#0284c7] hover:bg-[#0369a1] text-white px-3.5 py-1.5 font-black text-xs uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5"
+          >
+            <span>📊</span>
+            <span>Go to Analytics</span>
+          </Link>
+
           {activeAlert && (
             <button
               onClick={dismissAlert}
@@ -156,6 +174,30 @@ export default function Alerts() {
                 <span className="font-bold text-slate-400">SUBSCRIBED EVENT:</span>
                 <span className="text-[#d93850] font-bold">KIOSK_ALERT_EVENT</span>
               </div>
+            </div>
+
+            {/* Go to Analytics Section */}
+            <div className="mt-6 w-full max-w-md p-4 bg-slate-50 border border-slate-200 text-left flex items-center justify-between shadow-2xs">
+              <div>
+                <div className="text-xs font-black uppercase text-slate-800 flex items-center gap-1.5">
+                  <span>📊</span>
+                  <span>Sensor Telemetry & Heatmap</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  View Unakoti ADM5-Node 85 soil moisture, vibration & GIS radar
+                </div>
+              </div>
+              <Link
+                to="/app/analytics"
+                onClick={() => {
+                  localStorage.setItem('latitude', '23.7548');
+                  localStorage.setItem('longitude', '92.4273');
+                  localStorage.setItem('towerName', 'Unakoti ADM5-Node 85');
+                }}
+                className="bg-[#0284c7] hover:bg-[#0369a1] text-white px-3 py-1.5 font-bold text-xs uppercase tracking-wider transition-colors shrink-0 ml-3"
+              >
+                Go to Analytics →
+              </Link>
             </div>
           </div>
         </div>

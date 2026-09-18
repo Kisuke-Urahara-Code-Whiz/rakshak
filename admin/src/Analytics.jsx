@@ -154,6 +154,7 @@ export default function Analytics() {
   const [smsLogs, setSmsLogs] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [blipActive, setBlipActive] = useState(true);
 
   // Historical Arrays for Real-Time Charts (Fixed buffer length)
   const [historicalMoisture, setHistoricalMoisture] = useState([450]);
@@ -165,8 +166,10 @@ export default function Analytics() {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const polygonRef = useRef(null);
+  const markerRef = useRef(null);
 
-  const [targetCoords, setTargetCoords] = useState({ lat: 23.7271, lng: 92.7176 });
+  // Default to Unakoti ADM5-Node 85 (Tripura) if not set in localStorage
+  const [targetCoords, setTargetCoords] = useState({ lat: 23.7548, lng: 92.4273 });
 
   // 1. Fetch Location Coordinates
   useEffect(() => {
@@ -176,7 +179,7 @@ export default function Analytics() {
     if (!isNaN(storedLat) && !isNaN(storedLng)) {
       setTargetCoords({ lat: storedLat, lng: storedLng });
     } else {
-      setTargetCoords({ lat: 23.7271, lng: 92.7176 });
+      setTargetCoords({ lat: 23.7548, lng: 92.4273 });
     }
   }, []);
 
@@ -299,14 +302,30 @@ export default function Analytics() {
         maxZoom: 18,
       }).addTo(map);
 
+      const towerName = localStorage.getItem('towerName') || 'Unakoti ADM5-Node 85';
+
       const customIcon = L.divIcon({
-        className: 'custom-div-icon',
-        html: `<div style="background-color:#EF4444; width:16px; height:16px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
+        className: 'custom-tower-blip-icon',
+        html: `
+          <div style="position:relative; width:48px; height:48px; display:flex; align-items:center; justify-content:center;">
+            ${blipActive ? '<div style="position:absolute; width:42px; height:42px; border-radius:50%; border:2.5px solid #EF4444; animation: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; opacity:0.85;"></div>' : ''}
+            <div style="position:relative; z-index:10; background:#EF4444; width:26px; height:26px; border-radius:50%; border:2.5px solid white; box-shadow:0 0 10px rgba(239,68,68,0.7); display:flex; align-items:center; justify-content:center; color:white; font-size:12px;">🗼</div>
+          </div>
+        `,
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
       });
 
-      L.marker([lat, lng], { icon: customIcon }).addTo(map).bindPopup(`<b>Target Center</b><br>Lat: ${lat}, Lng: ${lng}`);
+      const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+      marker.bindPopup(`
+        <div style="font-family:sans-serif; padding:2px;">
+          <b style="font-size:13px; color:#0f172a;">${towerName}</b><br/>
+          <span style="font-size:10px; color:#64748b;">Tripura Sector • KIO-TR-085</span><br/>
+          <span style="font-size:10px; font-family:monospace; color:#0284c7;">Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}</span><br/>
+          <span style="font-size:10px; color:#10B981; font-weight:bold;">● In-Situ Telemetry Station Active</span>
+        </div>
+      `).openPopup();
+      markerRef.current = marker;
 
       const delta = 0.025;
       const polygonCoords = [
@@ -329,6 +348,25 @@ export default function Analytics() {
       setTimeout(() => map.invalidateSize(), 300);
     }
   }, [targetCoords]);
+
+  // Update marker blip on toggle
+  useEffect(() => {
+    if (markerRef.current && window.L) {
+      const isBlipOn = blipActive;
+      const newIcon = window.L.divIcon({
+        className: 'custom-tower-blip-icon',
+        html: `
+          <div style="position:relative; width:48px; height:48px; display:flex; align-items:center; justify-content:center;">
+            ${isBlipOn ? '<div style="position:absolute; width:42px; height:42px; border-radius:50%; border:2.5px solid #EF4444; animation: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; opacity:0.85;"></div>' : ''}
+            <div style="position:relative; z-index:10; background:#EF4444; width:26px; height:26px; border-radius:50%; border:2.5px solid white; box-shadow:0 0 10px rgba(239,68,68,0.7); display:flex; align-items:center; justify-content:center; color:white; font-size:12px;">🗼</div>
+          </div>
+        `,
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
+      });
+      markerRef.current.setIcon(newIcon);
+    }
+  }, [blipActive]);
 
   // 5. Heatmap Polygon Updates
   useEffect(() => {
@@ -490,7 +528,7 @@ export default function Analytics() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 font-sans p-4 md:p-6">
+    <div className="h-full w-full overflow-y-auto bg-slate-100 text-slate-800 font-sans p-4 md:p-6">
       {/* TOP HEADER */}
       <header className="mb-6 bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-3">
@@ -540,13 +578,30 @@ export default function Analytics() {
         <div className="lg:col-span-7 flex flex-col gap-6">
           {/* GIS MAP CARD */}
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
                 <h2 className="text-sm font-bold tracking-wide text-slate-800 uppercase">{t.gisTitle}</h2>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded flex items-center gap-1">
+                  <span>🗼</span>
+                  <span>Unakoti Node 85</span>
+                </span>
               </div>
-              <div className="text-xs text-slate-500 font-mono">
-                Lat: {targetCoords.lat.toFixed(4)} | Lng: {targetCoords.lng.toFixed(4)}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setBlipActive(!blipActive)}
+                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border transition-colors cursor-pointer ${
+                    blipActive
+                      ? 'bg-red-50 text-[#d93850] border-red-300 shadow-2xs'
+                      : 'bg-slate-100 text-slate-500 border-slate-300'
+                  }`}
+                  title="Toggle Tower Radar Pulse Blip"
+                >
+                  {blipActive ? '📡 Radar Blip: ON' : '📡 Radar Blip: OFF'}
+                </button>
+                <div className="text-xs text-slate-500 font-mono">
+                  Lat: {targetCoords.lat.toFixed(4)} | Lng: {targetCoords.lng.toFixed(4)}
+                </div>
               </div>
             </div>
 

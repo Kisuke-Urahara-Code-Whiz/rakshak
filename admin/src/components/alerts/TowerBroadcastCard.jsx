@@ -102,14 +102,30 @@ export default function TowerBroadcastCard({ activeAlert }) {
             </div>
           </div>
 
-          {/* Direct Zoom Action Button */}
-          <Link
-            to={`/app/risk-map?lat=${alertLat}&lng=${alertLng}&kioskId=${alertId}`}
-            className="mt-4 w-full bg-[#d93850] hover:bg-[#b8273d] text-white py-2.5 px-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow transition-all active:scale-95"
-          >
-            <span>🗺️</span>
-            <span>Zoom to Alert Kiosk on Risk Map</span>
-          </Link>
+          {/* Action Buttons */}
+          <div className="mt-4 flex flex-col gap-2">
+            <Link
+              to={`/app/risk-map?lat=${alertLat}&lng=${alertLng}&kioskId=${alertId}`}
+              className="w-full bg-[#d93850] hover:bg-[#b8273d] text-white py-2.5 px-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow transition-all active:scale-95"
+            >
+              <span>🗺️</span>
+              <span>Zoom to Alert Kiosk on Risk Map</span>
+            </Link>
+
+            <Link
+              to="/app/analytics"
+              onClick={() => {
+                localStorage.setItem('latitude', String(alertLat));
+                localStorage.setItem('longitude', String(alertLng));
+                localStorage.setItem('towerName', activeAlert.name || 'Unakoti ADM5-Node 85');
+                localStorage.setItem('towerId', alertId);
+              }}
+              className="w-full bg-[#0284c7] hover:bg-[#0369a1] text-white py-2.5 px-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow transition-all active:scale-95"
+            >
+              <span>📊</span>
+              <span>Go to Analytics ({activeAlert.name || 'Unakoti Node 85'})</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
