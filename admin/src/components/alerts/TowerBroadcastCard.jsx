@@ -1,8 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 // Left column of the Alerts page: the pulsing tower icon + active alert
-// kiosk details. Markup/behavior copied verbatim from Alerts.jsx.
+// kiosk details.
 export default function TowerBroadcastCard({ activeAlert }) {
+  const alertLat = activeAlert.lat ?? activeAlert.coordinates?.lat ?? 23.3644;
+  const alertLng = activeAlert.lng ?? activeAlert.coordinates?.lng ?? 93.3005;
+  const alertId = activeAlert.id || 'KIO-MZ-040';
+
   return (
     <div className="lg:col-span-5 bg-white border border-[#cbd5e1] shadow-md flex flex-col overflow-hidden">
       <style>{`
@@ -71,11 +76,11 @@ export default function TowerBroadcastCard({ activeAlert }) {
 
         {/* Tower Details */}
         <div className="mt-2 w-full max-w-sm">
-          <div className="text-xs font-mono font-bold text-[#64748b] tracking-wider">{activeAlert.id}</div>
+          <div className="text-xs font-mono font-bold text-[#64748b] tracking-wider">{alertId}</div>
           <h2 className="text-lg font-black uppercase text-[#0f172a] mt-0.5">{activeAlert.name}</h2>
-          <p className="text-xs font-bold text-[#d93850] uppercase mt-0.5">{activeAlert.adm5}</p>
+          <p className="text-xs font-bold text-[#d93850] uppercase mt-0.5">{activeAlert.adm5 || `${activeAlert.district}, ${activeAlert.state}`}</p>
 
-          <div className="grid grid-cols-2 gap-2 mt-5 text-left">
+          <div className="grid grid-cols-2 gap-2 mt-4 text-left">
             <div className="bg-[#f8fafc] p-2.5 border border-[#e2e8f0]">
               <div className="text-[9px] font-black uppercase text-[#64748b]">District / State</div>
               <div className="text-xs font-black text-[#0f172a] mt-0.5">{activeAlert.district}, {activeAlert.state}</div>
@@ -83,19 +88,28 @@ export default function TowerBroadcastCard({ activeAlert }) {
 
             <div className="bg-[#f8fafc] p-2.5 border border-[#e2e8f0]">
               <div className="text-[9px] font-black uppercase text-[#64748b]">Coordinates</div>
-              <div className="text-xs font-mono font-bold text-[#0f172a] mt-0.5">{activeAlert.lat}° N, {activeAlert.lng}° E</div>
+              <div className="text-xs font-mono font-bold text-[#0f172a] mt-0.5">{alertLat}° N, {alertLng}° E</div>
             </div>
 
             <div className="bg-[#f8fafc] p-2.5 border border-[#e2e8f0]">
               <div className="text-[9px] font-black uppercase text-[#64748b]">Sensor Node Type</div>
-              <div className="text-xs font-black text-[#0f172a] mt-0.5 truncate">{activeAlert.type}</div>
+              <div className="text-xs font-black text-[#0f172a] mt-0.5 truncate">{activeAlert.type || 'Landslide Telemetry Node'}</div>
             </div>
 
             <div className="bg-[#f8fafc] p-2.5 border border-[#e2e8f0]">
               <div className="text-[9px] font-black uppercase text-[#64748b]">Active Telemetry</div>
-              <div className="text-xs font-black text-emerald-600 mt-0.5">{activeAlert.sensorsActive} Channels Live</div>
+              <div className="text-xs font-black text-emerald-600 mt-0.5">{activeAlert.sensorsActive || 6} Channels Live</div>
             </div>
           </div>
+
+          {/* Direct Zoom Action Button */}
+          <Link
+            to={`/app/risk-map?lat=${alertLat}&lng=${alertLng}&kioskId=${alertId}`}
+            className="mt-4 w-full bg-[#d93850] hover:bg-[#b8273d] text-white py-2.5 px-4 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow transition-all active:scale-95"
+          >
+            <span>🗺️</span>
+            <span>Zoom to Alert Kiosk on Risk Map</span>
+          </Link>
         </div>
       </div>
     </div>

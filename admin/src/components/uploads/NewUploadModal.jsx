@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ENV from '../../config/env';
 
 const WARNING_SIGN_OPTIONS = [
   'Visible tension cracks in soil or roadway (>5cm)',
@@ -145,6 +146,53 @@ export default function NewUploadModal({ onAddUpload, onClose }) {
 
   const handleSubmit = () => {
     const payload = buildPayload();
+    const cleanPhone = (phoneNumber.replace(/\D/g, '') || '9832041182');
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+    const timeStr = now.toTimeString().slice(0, 8);
+
+    // Forward multipart payload to backend media-service
+    try {
+      if (selectedFile) {
+        const fd = new FormData();
+        fd.append('file', selectedFile);
+        fd.append('number', cleanPhone);
+        fd.append('fileType', uploadType === 'photo' ? 'PNG' : 'M4A');
+        fd.append('date', dateStr);
+        fd.append('time', timeStr);
+        fd.append('lat', String(lat || '27.6328'));
+        fd.append('lon', String(lng || '88.9482'));
+        fetch(`${ENV.API_BASE_URL}/media/upload`, { method: 'POST', body: fd }).catch(() => {});
+      } else {
+        const dummyCanvas = document.createElement('canvas');
+        dummyCanvas.width = 120;
+        dummyCanvas.height = 120;
+        const ctx = dummyCanvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = uploadType === 'photo' ? '#d93850' : '#f59e0b';
+          ctx.fillRect(0, 0, 120, 120);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '12px sans-serif';
+          ctx.fillText('FIELD REPORT', 10, 65);
+        }
+        dummyCanvas.toBlob((blob) => {
+          if (blob) {
+            const fd = new FormData();
+            fd.append('file', blob, `web_${Date.now()}.${uploadType === 'photo' ? 'png' : 'm4a'}`);
+            fd.append('number', cleanPhone);
+            fd.append('fileType', uploadType === 'photo' ? 'PNG' : 'M4A');
+            fd.append('date', dateStr);
+            fd.append('time', timeStr);
+            fd.append('lat', String(lat || '27.6328'));
+            fd.append('lon', String(lng || '88.9482'));
+            fetch(`${ENV.API_BASE_URL}/media/upload`, { method: 'POST', body: fd }).catch(() => {});
+          }
+        }, 'image/png');
+      }
+    } catch (err) {
+      console.warn('Backend media forwarding skipped:', err);
+    }
+
     const newUploadRecord = {
       id: payload.eventId,
       phoneNumber: payload.reporter.phoneNumber,

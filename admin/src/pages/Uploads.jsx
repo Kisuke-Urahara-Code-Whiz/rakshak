@@ -20,7 +20,7 @@ export default function Uploads() {
   const [isNewUploadOpen, setIsNewUploadOpen] = useState(false);
 
   // Role info & session
-  const userRole = window.localStorage.getItem('userRole') || 'Citizen';
+  const userRole = window.localStorage.getItem('userRole') || 'MDoNER Employee';
   const isCitizen = userRole === 'Citizen';
   let citizenNumber = null;
   try {
@@ -41,15 +41,23 @@ export default function Uploads() {
         if (res.ok) {
           const backendData = await res.json();
           if (Array.isArray(backendData)) {
-            setUploads((prev) => {
-              // For citizen, strictly filter by citizen phone
-              const filtered = isCitizen && cleanCitizenPhone
-                ? backendData.filter(b => b.phoneNumber?.replace(/\D/g, '').endsWith(cleanCitizenPhone))
-                : backendData;
+            const enrichedBackend = backendData.map((item) => ({
+              ...item,
+              isLiveSubmission: true,
+              relativeTime: item.relativeTime || 'Field Telemetry Ping',
+            }));
 
-              const existingIds = new Set(prev.map((item) => item.id));
-              const newItems = filtered.filter((b) => !existingIds.has(b.id));
-              return [...newItems, ...prev];
+            setUploads((prev) => {
+              const filtered = isCitizen && cleanCitizenPhone
+                ? enrichedBackend.filter((b) => b.phoneNumber?.replace(/\D/g, '').endsWith(cleanCitizenPhone))
+                : enrichedBackend;
+
+              const backendIds = new Set(filtered.map((b) => b.id));
+              // Retain non-colliding mock samples, but place live citizen uploads at top
+              const remainingSamples = prev.filter(
+                (item) => !backendIds.has(item.id) && !item.id?.startsWith('UPL-MB-')
+              );
+              return [...filtered, ...remainingSamples];
             });
           }
         }
@@ -72,10 +80,17 @@ export default function Uploads() {
       esAudio.addEventListener('audio-event', () => fetchBackendUploads());
     } catch {}
 
+    // Live WebSocket UPLOAD_EVENT listener from AlertContext
+    const handleWsUploadEvent = () => {
+      fetchBackendUploads();
+    };
+    window.addEventListener('rakshakNewUpload', handleWsUploadEvent);
+
     return () => {
       clearInterval(interval);
       if (esImage) esImage.close();
       if (esAudio) esAudio.close();
+      window.removeEventListener('rakshakNewUpload', handleWsUploadEvent);
     };
   }, [isCitizen, cleanCitizenPhone]);
 

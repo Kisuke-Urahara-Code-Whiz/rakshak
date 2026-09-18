@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  */
 export function useWebSocket({
   url,
+  fallbackUrl,
   onMessage,
   onOpen,
   onClose,
@@ -17,6 +18,10 @@ export function useWebSocket({
   const [status, setStatus] = useState('CONNECTING'); // 'CONNECTING' | 'OPEN' | 'CLOSED' | 'ERROR'
   const [lastMessage, setLastMessage] = useState(null);
   const [error, setError] = useState(null);
+
+  const urls = useRef([url, fallbackUrl].filter(Boolean));
+  urls.current = [url, fallbackUrl].filter(Boolean);
+  const activeUrlIndexRef = useRef(0);
 
   const socketRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
@@ -34,7 +39,10 @@ export function useWebSocket({
   onErrorRef.current = onError;
 
   const connect = useCallback(() => {
-    if (!url || !enabled) return;
+    const candidates = urls.current;
+    if (!candidates.length || !enabled) return;
+
+    const currentUrl = candidates[activeUrlIndexRef.current % candidates.length];
 
     if (socketRef.current) {
       try {
@@ -44,7 +52,7 @@ export function useWebSocket({
 
     try {
       setStatus('CONNECTING');
-      const ws = new WebSocket(url);
+      const ws = new WebSocket(currentUrl);
       socketRef.current = ws;
 
       ws.onopen = (event) => {
@@ -63,7 +71,6 @@ export function useWebSocket({
             onMessageRef.current(parsed, event);
           }
         } catch {
-          // If non-JSON text
           setLastMessage(event.data);
           if (onMessageRef.current) {
             onMessageRef.current(event.data, event);
@@ -83,6 +90,9 @@ export function useWebSocket({
         setStatus('CLOSED');
         if (onCloseRef.current) onCloseRef.current(event);
 
+        // Try next candidate URL on failure
+        activeUrlIndexRef.current = (activeUrlIndexRef.current + 1) % candidates.length;
+
         if (autoReconnect && isMountedRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -95,12 +105,13 @@ export function useWebSocket({
     } catch (err) {
       setStatus('ERROR');
       setError(err);
+      activeUrlIndexRef.current = (activeUrlIndexRef.current + 1) % candidates.length;
       if (autoReconnect && isMountedRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = setTimeout(connect, reconnectInterval);
       }
     }
-  }, [url, enabled, autoReconnect, reconnectInterval]);
+  }, [enabled, autoReconnect, reconnectInterval]);
 
   useEffect(() => {
     isMountedRef.current = true;

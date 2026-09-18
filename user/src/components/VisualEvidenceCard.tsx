@@ -21,21 +21,41 @@ export function VisualEvidenceCard({
   i18n.setLanguage(language);
 
   const handleCapture = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        i18n.t('alert_camera_title'),
-        i18n.t('alert_camera_msg')
-      );
-      return;
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          i18n.t('alert_camera_title') || 'Camera Permission',
+          i18n.t('alert_camera_msg') || 'Camera permission is required to capture field photos.'
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets[0]?.uri) {
+        onSetPhotoUri(result.assets[0].uri);
+      }
+    } catch (e: any) {
+      console.warn('Camera launch error, opening gallery fallback:', e);
+      handlePickImage();
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images', 'videos'],
-      allowsEditing: true,
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets[0]?.uri) {
-      onSetPhotoUri(result.assets[0].uri);
+  };
+
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets[0]?.uri) {
+        onSetPhotoUri(result.assets[0].uri);
+      }
+    } catch (e: any) {
+      Alert.alert('File Picker Error', e.message || 'Unable to access photo library.');
     }
   };
 
@@ -44,7 +64,7 @@ export function VisualEvidenceCard({
   return (
     <View className="bg-[#f4f6f8] border border-[#cbd5e1] p-3 mb-3">
       <View className="flex-row items-center justify-between mb-2">
-        <View>
+        <View className="flex-1 mr-2">
           <Text className="text-xs font-black text-[#1a1a1a] uppercase tracking-wider">
             📷 {i18n.t('visual_card_title')}
           </Text>
@@ -54,14 +74,24 @@ export function VisualEvidenceCard({
               : i18n.t('visual_status_empty')}
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={handleCapture}
-          className="bg-[#333333] px-3 py-1.5 active:bg-[#1a1a1a]"
-        >
-          <Text className="text-white text-[10px] font-black uppercase tracking-wider">
-            {photoUri ? i18n.t('btn_retake_media') : i18n.t('btn_open_camera')}
-          </Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-1.5">
+          <TouchableOpacity
+            onPress={handleCapture}
+            className="bg-[#333333] px-2.5 py-1.5 active:bg-[#1a1a1a]"
+          >
+            <Text className="text-white text-[10px] font-black uppercase tracking-wider">
+              {photoUri ? i18n.t('btn_retake_media') : i18n.t('btn_open_camera')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handlePickImage}
+            className="bg-[#d93850] px-2.5 py-1.5 active:bg-[#b8273d]"
+          >
+            <Text className="text-white text-[10px] font-black uppercase tracking-wider">
+              Choose File
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {photoUri && (

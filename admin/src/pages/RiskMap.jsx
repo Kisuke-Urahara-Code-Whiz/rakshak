@@ -28,15 +28,24 @@ import { useAlert } from '../context/AlertContext';
 function buildKioskGeoJson(kiosks = []) {
   return {
     type: 'FeatureCollection',
-    features: kiosks.map((k) => ({
-      type: 'Feature',
-      id: k.id,
-      properties: { ...k },
-      geometry: {
-        type: 'Point',
-        coordinates: [k.lng, k.lat]
-      }
-    }))
+    features: kiosks
+      .map((k) => {
+        const rawLng = k.lng ?? k.coordinates?.lng ?? k.coordinates?.lon ?? k.longitude;
+        const rawLat = k.lat ?? k.coordinates?.lat ?? k.latitude;
+        const lng = Number(rawLng);
+        const lat = Number(rawLat);
+        if (isNaN(lng) || isNaN(lat)) return null;
+        return {
+          type: 'Feature',
+          id: k.id,
+          properties: { ...k, lat, lng },
+          geometry: {
+            type: 'Point',
+            coordinates: [lng, lat]
+          }
+        };
+      })
+      .filter(Boolean)
   };
 }
 
@@ -225,9 +234,20 @@ export default function RiskMap() {
   }, [dynamicKiosks]);
 
   const placeAlertBeacon = useCallback((kiosk) => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !kiosk) return;
     if (alertMarkerRef.current) {
       alertMarkerRef.current.remove();
+      alertMarkerRef.current = null;
+    }
+
+    const rawLng = kiosk.lng ?? kiosk.coordinates?.lng ?? kiosk.coordinates?.lon ?? kiosk.longitude;
+    const rawLat = kiosk.lat ?? kiosk.coordinates?.lat ?? kiosk.latitude;
+    const lng = Number(rawLng);
+    const lat = Number(rawLat);
+
+    if (isNaN(lng) || isNaN(lat)) {
+      console.warn('[RiskMap] placeAlertBeacon skipped due to invalid coordinates:', kiosk);
+      return;
     }
 
     const el = document.createElement('div');
@@ -239,9 +259,13 @@ export default function RiskMap() {
       <div class="vibrating-beacon"></div>
     `;
 
-    alertMarkerRef.current = new Marker({ element: el, anchor: 'center' })
-      .setLngLat([kiosk.lng, kiosk.lat])
-      .addTo(mapRef.current);
+    try {
+      alertMarkerRef.current = new Marker({ element: el, anchor: 'center' })
+        .setLngLat([lng, lat])
+        .addTo(mapRef.current);
+    } catch (markerErr) {
+      console.warn('[RiskMap] Failed to place alert marker:', markerErr);
+    }
   }, []);
 
   // Handler to trigger simulated alert
@@ -263,14 +287,22 @@ export default function RiskMap() {
     if (activeAlert && mapRef.current) {
       placeAlertBeacon(activeAlert);
       setShowKiosks(true);
-      try {
-        mapRef.current.flyTo({
-          center: [activeAlert.lng, activeAlert.lat],
-          zoom: Math.max(mapRef.current.getZoom(), 9.5),
-          speed: 1.4,
-          essential: true,
-        });
-      } catch {}
+
+      const rawLng = activeAlert.lng ?? activeAlert.coordinates?.lng ?? activeAlert.coordinates?.lon ?? activeAlert.longitude;
+      const rawLat = activeAlert.lat ?? activeAlert.coordinates?.lat ?? activeAlert.latitude;
+      const lng = Number(rawLng);
+      const lat = Number(rawLat);
+
+      if (!isNaN(lng) && !isNaN(lat)) {
+        try {
+          mapRef.current.flyTo({
+            center: [lng, lat],
+            zoom: Math.max(mapRef.current.getZoom(), 9.5),
+            speed: 1.4,
+            essential: true,
+          });
+        } catch {}
+      }
     } else if (!activeAlert && alertMarkerRef.current) {
       alertMarkerRef.current.remove();
       alertMarkerRef.current = null;
@@ -702,7 +734,14 @@ export default function RiskMap() {
       try {
         const storedAlert = localStorage.getItem('active_alert_kiosk');
         if (storedAlert) {
-          placeAlertBeacon(JSON.parse(storedAlert));
+          const parsed = JSON.parse(storedAlert);
+          const rawLng = parsed.lng ?? parsed.coordinates?.lng ?? parsed.coordinates?.lon ?? parsed.longitude;
+          const rawLat = parsed.lat ?? parsed.coordinates?.lat ?? parsed.latitude;
+          if (!isNaN(Number(rawLng)) && !isNaN(Number(rawLat))) {
+            placeAlertBeacon(parsed);
+          } else {
+            localStorage.removeItem('active_alert_kiosk');
+          }
         }
       } catch {}
 
@@ -720,6 +759,19 @@ export default function RiskMap() {
 
     return () => { isMapLoadedRef.current = false; map.remove(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reactive listener for deep link query params (?lat=..&lng=..&kioskId=..)
+  useEffect(() => {
+    if (!isMapLoadedRef.current || !mapRef.current) return;
+    const params = new URLSearchParams(location.search);
+    const urlLat = parseFloat(params.get('lat'));
+    const urlLng = parseFloat(params.get('lng'));
+    const kioskId = params.get('kioskId');
+
+    if (!isNaN(urlLat) && !isNaN(urlLng)) {
+      handleDeepLinkKiosk(kioskId, urlLat, urlLng);
+    }
+  }, [location.search, handleDeepLinkKiosk]);
 
   useEffect(() => {
     if (isMapLoadedRef.current) applyNode(currentNode, activeParam);

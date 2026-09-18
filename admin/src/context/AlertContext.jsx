@@ -13,7 +13,13 @@ export function AlertProvider({ children }) {
   const [activeAlert, setActiveAlert] = useState(() => {
     try {
       const stored = localStorage.getItem('active_alert_kiosk');
-      return stored ? JSON.parse(stored) : null;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const lat = Number(parsed.lat ?? parsed.coordinates?.lat ?? parsed.latitude ?? 27.6328);
+        const lng = Number(parsed.lng ?? parsed.coordinates?.lng ?? parsed.coordinates?.lon ?? parsed.longitude ?? 88.9482);
+        return { ...parsed, lat, lng, coordinates: { lat, lng } };
+      }
+      return null;
     } catch {
       return null;
     }
@@ -33,9 +39,12 @@ export function AlertProvider({ children }) {
       const stored = localStorage.getItem('active_alert_kiosk');
       if (stored) {
         const parsed = JSON.parse(stored);
-        const exists = list.some((k) => k.id === parsed.id);
+        const lat = Number(parsed.lat ?? parsed.coordinates?.lat ?? parsed.latitude ?? 27.6328);
+        const lng = Number(parsed.lng ?? parsed.coordinates?.lng ?? parsed.coordinates?.lon ?? parsed.longitude ?? 88.9482);
+        const normalized = { ...parsed, lat, lng, coordinates: { lat, lng } };
+        const exists = list.some((k) => k.id === normalized.id);
         if (!exists) {
-          list.unshift(parsed);
+          list.unshift(normalized);
         }
       }
     } catch {}
@@ -79,12 +88,21 @@ export function AlertProvider({ children }) {
     const message = eventData.message || 'RAPID SHEAR STRAIN & PORE-PRESSURE SATURATION DETECTED';
     const timestamp = eventData.timestamp || new Date().toISOString();
 
+    const rawLat = kiosk.lat ?? kiosk.coordinates?.lat ?? kiosk.latitude ?? eventData.latitude;
+    const rawLng = kiosk.lng ?? kiosk.coordinates?.lng ?? kiosk.coordinates?.lon ?? kiosk.longitude ?? eventData.longitude;
+    const lat = Number(rawLat) || 27.6328;
+    const lng = Number(rawLng) || 88.9482;
+
     const alertObject = {
       ...kiosk,
+      id: kiosk.id || `ALERT-${Date.now()}`,
+      lat,
+      lng,
+      coordinates: { lat, lng },
       hazardUpdate,
       message,
       timestamp,
-      type: kiosk.type || 'Geotechnical Landslide Node',
+      type: kiosk.type || 'Official Tactical Field Command',
       status: 'Warning',
       riskLevel: 'High',
     };
@@ -97,7 +115,7 @@ export function AlertProvider({ children }) {
 
     // 3. Update dynamic kiosk registry
     setDynamicKiosks((prev) => {
-      const idx = prev.findIndex((k) => k.id === kiosk.id);
+      const idx = prev.findIndex((k) => k.id === alertObject.id);
       if (idx !== -1) {
         const copy = [...prev];
         copy[idx] = { ...copy[idx], ...alertObject };
@@ -115,9 +133,9 @@ export function AlertProvider({ children }) {
     // 5. Add to history
     setAlertHistory((prev) => [
       {
-        id: `${kiosk.id}-${Date.now()}`,
+        id: `${alertObject.id}-${Date.now()}`,
         timestamp,
-        kiosk,
+        kiosk: alertObject,
         hazardUpdate,
         message,
       },
@@ -137,6 +155,7 @@ export function AlertProvider({ children }) {
     reconnect: reconnectWs,
   } = useWebSocket({
     url: ENV.WS_ALERT_URL,
+    fallbackUrl: `${ENV.API_BASE_URL.replace(/^http/, 'ws')}/room/ws/alerts`,
     enabled: true,
     autoReconnect: true,
     reconnectInterval: ENV.WS_RECONNECT_INTERVAL,

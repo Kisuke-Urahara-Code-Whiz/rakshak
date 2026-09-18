@@ -1,4 +1,5 @@
 import random
+import time
 from typing import List
 import requests
 from fastapi import APIRouter
@@ -10,11 +11,13 @@ from ..schemas import AlertRequest, SensorReading
 from ..services import process_alert
 
 router = APIRouter()
+_LAST_SMS_ALERT_TIME = 0.0
 
 
 @router.post("/api/soil/bulk")
 async def receive_hardware_data(payload: List[SensorReading]):
     """Receives sensor payload from serial COM script and checks thresholds."""
+    global _LAST_SMS_ALERT_TIME
     parsed_array = []
     risk_values = []
     alert_triggered = False
@@ -39,12 +42,16 @@ async def receive_hardware_data(payload: List[SensorReading]):
             risk_values.append(risk)
 
             if val <= 150.0 and not alert_triggered:
-                if state.counter < 5:
+                now = time.time()
+                if now - _LAST_SMS_ALERT_TIME >= 60.0:
                     sms_url = get_service_url(settings.SMS_SERVICE_NAME, "/send-alert")
                     res2 = requests.post(sms_url)
+                    _LAST_SMS_ALERT_TIME = now
                     if res2.status_code == 200:
                         state.counter += 1
                         print(f"[THRESHOLD ALERT Triggered]: {res2.status_code} {res2.text}")
+                    else:
+                        print(f"[THRESHOLD ALERT Status/Rate-Limit]: {res2.status_code} {res2.text}")
                 try:
                     res = await process_alert(AlertRequest(device_id="device_1", duration_ms=500))
                     print(f"[WAN ALERT SENT]: {res}")
