@@ -1,13 +1,22 @@
-from fastapi import APIRouter, WebSocket,WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
 from datetime import datetime
+
 router = APIRouter()
 
-def tel(websocket):
-    realsoil = websocket.app.state.real_soil
-    vibration = websocket.app.state.vibration
+def tel(realsoil: float, vibration: float):
+    # Ensure vibration is float
+    if vibration is None:
+        vibration = 0.0
+    else:
+        try:
+            vibration = float(vibration)
+        except (ValueError, TypeError):
+            vibration = 0.0
+
     risk_pct = max(0, min(100, int((500 - realsoil) / 3.5 + (vibration * 30))))
     sms_logs = []
+
     if risk_pct > 50 or realsoil < 200:
         timestamp = datetime.now().strftime("%H:%M:%S")
         sms_logs = [
@@ -39,15 +48,14 @@ def tel(websocket):
         "timestamp": datetime.now().strftime("%H:%M:%S")
     }
     return payload
-    
+
 
 @router.websocket("/ws/soil/{client_id}")
 async def websocket_soil(websocket: WebSocket, client_id: str):
     manager = websocket.app.state.manager
     soil_queue = websocket.app.state.soil_queue
     riskJson = websocket.app.state.riskTemp
-    #realsoil = websocket.app.state.real_soil
-    #vibration = websocket.app.state.vibration
+
     await manager.connect("SOIL", client_id, websocket)
     print(f"[WS] Connected: SOIL Manager '{client_id}'")
 
@@ -57,13 +65,13 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
             print(f"[SOIL #{client_id}] Received: {raw_data}")
 
             try:
-                payload = json.loads(raw_data)
+                data_in = json.loads(raw_data)
             except (json.JSONDecodeError, TypeError):
                 print(f"[SOIL #{client_id}] Invalid JSON")
                 continue
 
             # Support both "risk" (from Soil.py) and "soil_value"
-            soil_value = payload.get("risk") if "risk" in payload else payload.get("soil_value")
+            soil_value = data_in.get("risk") if "risk" in data_in else data_in.get("soil_value")
 
             if soil_value is None:
                 print(f"[SOIL #{client_id}] No soil reading key ('risk' or 'soil_value') found")
@@ -75,12 +83,23 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                 print(f"[SOIL #{client_id}] Invalid soil value: {soil_value}")
                 continue
 
+            # Safely extract vibration
+            vibration_val = data_in.get("vib", 0.0)
+            try:
+                vibration_val = float(vibration_val) if vibration_val is not None else 0.0
+            except (ValueError, TypeError):
+                vibration_val = 0.0
+
+            # Store in app state & queue
+            websocket.app.state.real_soil = soil_value
+            websocket.app.state.vibration = vibration_val
             soil_queue.append(soil_value)
-            realsoil = soil_value
-            vibration = payload.get("vib")
-            print(f"[SOIL] Value: {soil_value} |Real Soil: {realsoil}|Vibration :{vibration}")
-            payload = tel(websocket)
-            print(payload)
+
+            print(f"[SOIL] Value: {soil_value} | Vibration: {vibration_val}")
+            
+            # Generate Telemetry Update Payload
+            telemetry_payload = tel(soil_value, vibration_val)
+
             # ALERT TRIGGER
             if soil_value < 200:
                 alert_message = {
@@ -88,8 +107,17 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                     "duration_ms": 2000,
                 }
                 print(f"🚨 [ALERT] Threshold breached! Soil value = {soil_value}")
-                await manager.broadcast_to_role(json.dumps(alert_message), "ESP")                
-            await manager.broadcast_to_role(payload, "FRONT")
+                # Pass JSON serialized strings or dicts according to manager signature
+                if hasattr(manager, "broadcast_to_role"):
+                    await manager.broadcast_to_role(json.dumps(alert_message), "ESP")
+
+            # Broadcast TELEMETRY_UPDATE to FRONT clients
+            if hasattr(manager, "broadcast_to_role"):
+                # Convert dict to JSON string or send dict depending on your manager setup
+                try:
+                    await manager.broadcast_to_role(json.dumps(telemetry_payload), "FRONT")
+                except Exception:
+                    await manager.broadcast_to_role(telemetry_payload, "FRONT")
 
     except WebSocketDisconnect:
         print(f"[WS] Disconnected: SOIL Manager '{client_id}'")
