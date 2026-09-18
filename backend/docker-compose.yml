@@ -62,6 +62,9 @@ services:
     container_name: media-service
     build: ./java/media-service
 
+    ports:
+      - "5002:5000"
+
     restart: unless-stopped
 
     healthcheck:
@@ -75,6 +78,10 @@ services:
       EUREKA_SERVER_HOST: discovery-service
       EUREKA_SERVER_PORT: 5000
       SPRING_PROFILES_ACTIVE: docker
+      UPLOAD_DIR: /app/uploads
+
+    volumes:
+      - media_uploads:/app/uploads
 
     depends_on:
       discovery-service:
@@ -87,6 +94,9 @@ services:
     image: sih-room-service:2.0.0
     container_name: room-service
     build: ./java/room-service
+
+    ports:
+      - "5004:5000"
 
     restart: unless-stopped
 
@@ -115,6 +125,9 @@ services:
     container_name: sql-service
     build: ./java/sql-service
 
+    ports:
+      - "5003:5000"
+
     restart: unless-stopped
 
     healthcheck:
@@ -131,9 +144,9 @@ services:
 
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${DB_NAME}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-rakshak}
+      DB_USERNAME: ${DB_USERNAME:-dev}
+      DB_PASSWORD: ${DB_PASSWORD:-dev}
 
     depends_on:
       discovery-service:
@@ -185,15 +198,15 @@ services:
       - "9000:5432"
 
     environment:
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME:-dev}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev}
+      POSTGRES_DB: ${DB_NAME:-rakshak}
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME:-dev} -d ${DB_NAME:-rakshak}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -287,4 +300,5 @@ networks:
 
 volumes:
   postgres_data:
+  media_uploads:
 
