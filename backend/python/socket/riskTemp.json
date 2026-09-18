@@ -1,0 +1,25 @@
+{
+  "type": "KIOSK_ALERT_EVENT",
+  "timestamp": "2026-09-18T05:03:42Z",
+  "kiosk": {
+    "id": "KIO-SK-093",
+    "name": "North Sikkim ADM5-Node 93",
+    "state": "Sikkim",
+    "district": "North Sikkim",
+    "subDivision": "North Sikkim Sub-Division",
+    "adm5": "Locality Block 93 - North Sikkim",
+    "type": "Geotechnical Landslide Node",
+    "status": "Warning",
+    "riskLevel": "High",
+    "lat": 27.6328,
+    "lng": 88.9482,
+    "sensorsActive": 6,
+    "lastPing": "Just now"
+  },
+  "hazardUpdate": {
+    "parameter": "landslide",
+    "regionName": "North Sikkim",
+    "displayLevel": "High"
+  },
+  "message": "RAPID SHEAR STRAIN & PORE-PRESSURE SATURATION DETECTED"
+}
