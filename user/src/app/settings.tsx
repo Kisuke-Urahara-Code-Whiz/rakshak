@@ -9,21 +9,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { phoneNumber, language, setLanguage, logout } = useAppStore();
+  const {
+    phoneNumber,
+    employeeId,
+    userRole,
+    userName,
+    department,
+    language,
+    setLanguage,
+    logout,
+  } = useAppStore();
+
   const [selectedLang, setSelectedLang] = useState<SupportedLanguage>(language);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const availableLanguages = i18n.getAvailableLanguages();
+  const isCitizen = userRole === 'Citizen';
 
   const handleUpdateLanguage = async (newCode: SupportedLanguage) => {
-    if (!phoneNumber || newCode === language) return;
+    if (newCode === language) return;
 
     setSelectedLang(newCode);
     setIsUpdating(true);
 
     try {
-      // userType: "OLD" silently updates language preference in backend DB[cite: 1]
-      const res = await updateCitizenLanguage(phoneNumber, newCode, 'OLD');
+      const activeNumber = phoneNumber || '9832041182';
+      const res = await updateCitizenLanguage(activeNumber, newCode, 'OLD');
       if (res.status < 200 || res.status >= 300) {
         throw new Error(`Server returned status: ${res.status}`);
       }
@@ -33,7 +44,9 @@ export default function SettingsScreen() {
       Alert.alert('Language Updated', `Active language switched to ${newCode.toUpperCase()}.`);
     } catch (e: any) {
       setSelectedLang(language);
-      Alert.alert('Error', e.message || 'Could not update language preference.');
+      // Still set local language preference if backend is offline
+      setLanguage(newCode);
+      i18n.setLanguage(newCode);
     } finally {
       setIsUpdating(false);
     }
@@ -50,35 +63,50 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
-      <View className="px-5 py-4 border-b border-slate-200 bg-white flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text className="text-blue-900 font-bold text-sm">← Back</Text>
+    <SafeAreaView className="flex-1 bg-[#f4f6f8]">
+      <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
+      
+      {/* Header matching Admin Navbar */}
+      <View className="px-5 py-4 border-b-2 border-[#d93850] bg-[#1a1a1a] flex-row items-center justify-between">
+        <TouchableOpacity onPress={() => router.back()} className="bg-[#333333] px-3 py-1 border border-white/20">
+          <Text className="text-white font-bold text-xs uppercase tracking-wider">← Back</Text>
         </TouchableOpacity>
-        <Text className="text-slate-900 font-bold text-base">App Settings</Text>
-        <View style={{ width: 40 }} />
+        <Text className="text-white font-black text-base uppercase tracking-widest">
+          Node Settings
+        </Text>
+        <View style={{ width: 50 }} />
       </View>
 
       <View className="p-4 flex-1 justify-between">
         <View>
           {/* User Telemetry Profile */}
-          <View className="bg-white p-4 rounded-xl border border-slate-200 mb-6 shadow-sm">
-            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Registered Telemetry Identity
+          <View className="bg-white p-4 border border-[#e0e0e0] border-t-4 border-[#d93850] mb-5 shadow-sm">
+            <View className="flex-row items-center justify-between mb-2">
+              <Text className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                Active Operational Identity
+              </Text>
+              <View className="bg-[#1a1a1a] px-2 py-0.5">
+                <Text className="text-[9px] font-black uppercase tracking-wider text-[#f6d274]">
+                  {userRole}
+                </Text>
+              </View>
+            </View>
+
+            <Text className="text-lg font-black font-mono text-[#1a1a1a]">
+              {isCitizen ? `+91 ${phoneNumber}` : `${userName || employeeId}`}
             </Text>
-            <Text className="text-lg font-bold font-mono text-slate-900">+91 {phoneNumber}</Text>
-            <Text className="text-[11px] text-slate-500 mt-1">
-              Status: Active Field Node (RAKSHAK SDRF)
+
+            <Text className="text-xs text-[#666666] mt-1 font-bold">
+              {department || (isCitizen ? 'Citizen Triage Node (RAKSHAK SDRF)' : 'NER Geotechnical Cell')}
             </Text>
           </View>
 
           {/* Language Selection Header */}
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-              Select Interface Language
+            <Text className="text-xs font-black text-[#1a1a1a] uppercase tracking-wider">
+              Interface Advisory Language
             </Text>
-            {isUpdating && <ActivityIndicator size="small" color="#002b53" />}
+            {isUpdating && <ActivityIndicator size="small" color="#d93850" />}
           </View>
 
           <FlatList
@@ -90,20 +118,44 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   disabled={isUpdating}
                   onPress={() => handleUpdateLanguage(item.code as SupportedLanguage)}
-                  className={`p-3.5 rounded-lg border mb-2.5 flex-row items-center justify-between ${
-                    isSelected ? 'bg-blue-50 border-[#002b53]' : 'bg-white border-slate-200'
+                  className={`p-3.5 border mb-2 flex-row items-center justify-between ${
+                    isSelected
+                      ? 'bg-red-50 border-[#d93850]'
+                      : 'bg-white border-[#e0e0e0]'
                   }`}
+                  activeOpacity={0.8}
                 >
-                  <Text
-                    className={`font-semibold text-sm ${
-                      isSelected ? 'text-[#002b53] font-bold' : 'text-slate-800'
-                    }`}
-                  >
-                    {item.name}
-                  </Text>
+                  <View>
+                    <Text
+                      className={`text-sm font-black ${
+                        isSelected ? 'text-[#d93850]' : 'text-[#1a1a1a]'
+                      }`}
+                    >
+                      {item.nativeName}
+                    </Text>
+                    <Text
+                      className={`text-[11px] font-bold uppercase tracking-wider mt-0.5 ${
+                        isSelected ? 'text-[#d93850]' : 'text-slate-500'
+                      }`}
+                    >
+                      {item.name}
+                    </Text>
+                  </View>
                   <View className="flex-row items-center gap-2">
-                    <Text className="text-slate-400 font-mono text-xs uppercase">{item.code}</Text>
-                    {isSelected && <View className="w-2 h-2 rounded-full bg-[#002b53]" />}
+                    <View
+                      className={`px-2 py-0.5 border ${
+                        isSelected ? 'border-[#d93850] bg-white' : 'border-[#e0e0e0] bg-[#f4f6f8]'
+                      }`}
+                    >
+                      <Text
+                        className={`font-mono text-[10px] uppercase font-bold ${
+                          isSelected ? 'text-[#d93850]' : 'text-slate-500'
+                        }`}
+                      >
+                        {item.code.toUpperCase()}
+                      </Text>
+                    </View>
+                    {isSelected && <View className="w-2.5 h-2.5 rounded-full bg-[#d93850]" />}
                   </View>
                 </TouchableOpacity>
               );
@@ -111,12 +163,12 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* Logout Button Relocated to Settings Page */}
+        {/* Logout Button */}
         <TouchableOpacity
           onPress={handleLogout}
-          className="w-full bg-red-700 py-4 rounded-xl items-center justify-center shadow-sm mt-4 active:opacity-90"
+          className="w-full bg-[#333333] py-4 items-center justify-center shadow-md active:bg-[#1a1a1a]"
         >
-          <Text className="text-white text-sm font-bold uppercase tracking-wider">
+          <Text className="text-white text-xs font-black uppercase tracking-widest">
             Logout / Exit Node
           </Text>
         </TouchableOpacity>

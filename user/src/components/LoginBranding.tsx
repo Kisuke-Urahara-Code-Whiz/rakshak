@@ -5,17 +5,18 @@ const { width } = Dimensions.get('window');
 export function LoginBranding() {
   return (
     <View className="items-center">
-      <Image
-        source={require('../../assets/images/logo-nobg.png')}
-        style={{ width: width * 0.45, height: width * 0.45 }}
-        resizeMode="contain"
-        className="mb-8"
-      />
+      <View className="h-20 w-20 bg-white items-center justify-center p-2 mb-4 shadow-md">
+        <Image
+          source={require('../../assets/images/logo-nobg.png')}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="contain"
+        />
+      </View>
 
-      <Text className="text-2xl font-bold text-[#003366] text-center tracking-tight">
-        Citizen Authentication
+      <Text className="text-2xl font-black text-[#1a1a1a] text-center uppercase tracking-widest">
+        RAKSHAK
       </Text>
-      <Text className="text-xs text-slate-500 text-center mt-1">
+      <Text className="text-xs font-bold text-[#d93850] text-center mt-1 uppercase tracking-wider">
         Ministry of Development of North Eastern Region
       </Text>
     </View>

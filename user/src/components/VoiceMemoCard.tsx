@@ -95,13 +95,13 @@ export function VoiceMemoCard({
   const ext = getFileExtension(voiceUri, 'M4A');
 
   return (
-    <View className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
+    <View className="bg-[#f4f6f8] border border-[#cbd5e1] p-3">
       <View className="flex-row items-center justify-between mb-2">
         <View>
-          <Text className="text-xs font-bold text-slate-800">
-            {i18n.t('voice_card_title')}
+          <Text className="text-xs font-black text-[#1a1a1a] uppercase tracking-wider">
+            🎙️ {i18n.t('voice_card_title')}
           </Text>
-          <Text className="text-[11px] text-slate-500">
+          <Text className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
             {isRecording
               ? i18n.t('voice_status_recording')
               : voiceUri
@@ -111,11 +111,11 @@ export function VoiceMemoCard({
         </View>
         <TouchableOpacity
           onPress={isRecording ? stopRecording : startRecording}
-          className={`px-3.5 py-1.5 rounded active:opacity-80 ${
-            isRecording ? 'bg-red-600' : 'bg-[#002b53]'
+          className={`px-3 py-1.5 active:opacity-90 ${
+            isRecording ? 'bg-[#d93850]' : 'bg-[#333333]'
           }`}
         >
-          <Text className="text-white text-xs font-semibold">
+          <Text className="text-white text-[10px] font-black uppercase tracking-wider">
             {isRecording
               ? i18n.t('btn_recording_stop')
               : voiceUri
@@ -126,15 +126,15 @@ export function VoiceMemoCard({
       </View>
 
       {voiceUri && !isRecording && (
-        <View className="mt-3 pt-3 border-t border-slate-200">
-          <View className="flex-row items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2 mb-3">
+        <View className="mt-3 pt-3 border-t border-[#cbd5e1]">
+          <View className="flex-row items-center justify-between bg-white border border-[#cbd5e1] px-3 py-2 mb-3">
             <View className="flex-row items-center gap-2">
               <View
-                className={`w-2.5 h-2.5 rounded-full ${
+                className={`w-2 h-2 rounded-full ${
                   playerStatus.playing ? 'bg-emerald-500' : 'bg-slate-400'
                 }`}
               />
-              <Text className="text-xs font-medium text-slate-700">
+              <Text className="text-xs font-bold text-[#333333] uppercase">
                 {playerStatus.playing
                   ? i18n.t('voice_playing')
                   : `${i18n.t('voice_recorded_memo')} (${ext})`}
@@ -142,9 +142,9 @@ export function VoiceMemoCard({
             </View>
             <TouchableOpacity
               onPress={handleTogglePlayback}
-              className="bg-blue-50 border border-blue-200 px-3.5 py-1 rounded active:opacity-75"
+              className="bg-[#f4f6f8] border border-[#cccccc] px-3 py-1 active:bg-[#e0e0e0]"
             >
-              <Text className="text-[#002b53] text-xs font-bold">
+              <Text className="text-[#333333] text-[10px] font-black uppercase tracking-wider">
                 {playerStatus.playing ? i18n.t('btn_pause_memo') : i18n.t('btn_play_memo')}
               </Text>
             </TouchableOpacity>
@@ -153,13 +153,13 @@ export function VoiceMemoCard({
           <TouchableOpacity
             onPress={onSendAudio}
             disabled={isSending}
-            className="w-full bg-[#003366] py-2.5 rounded-lg flex-row items-center justify-center active:opacity-90 shadow-sm"
+            className="w-full bg-[#d93850] py-3 flex-row items-center justify-center active:bg-[#b8273d] shadow-sm"
           >
             {isSending ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <Text className="text-white text-xs font-bold uppercase tracking-wider">
-                {i18n.t('btn_transmit_voice')} ({ext})
+              <Text className="text-white text-xs font-black uppercase tracking-widest">
+                Transmit Audio To Java Backend ({ext})
               </Text>
             )}
           </TouchableOpacity>

@@ -714,10 +714,25 @@ export class LocalizationManager {
     return (fallback && fallback.get(key)) || key;
   }
 
-  getAvailableLanguages(): { code: string; name: string }[] {
-    const list: { code: string; name: string }[] = [];
+  getAvailableLanguages(): { code: string; name: string; nativeName: string }[] {
+    const nativeLabels: Record<string, string> = {
+      en: 'English',
+      hi: 'हिंदी (Hindi)',
+      as: 'অসমীয়া (Assamese)',
+      bn: 'বাংলা (Bengali)',
+      ne: 'नेपाली (Nepali)',
+      mni: 'মৈতৈলোন্ (Manipuri)',
+      lus: 'Mizo ṭawng (Mizo)',
+      kha: 'Ka Ktien (Khasi)',
+      gar: 'A·chik (Garo)',
+    };
+    const list: { code: string; name: string; nativeName: string }[] = [];
     this.dictionaries.forEach((dict) => {
-      list.push({ code: dict.code, name: dict.name });
+      list.push({
+        code: dict.code,
+        name: dict.name,
+        nativeName: nativeLabels[dict.code] || dict.name,
+      });
     });
     return list;
   }

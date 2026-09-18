@@ -42,13 +42,13 @@ export function VisualEvidenceCard({
   const ext = getFileExtension(photoUri, 'PNG');
 
   return (
-    <View className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mb-4">
+    <View className="bg-[#f4f6f8] border border-[#cbd5e1] p-3 mb-3">
       <View className="flex-row items-center justify-between mb-2">
         <View>
-          <Text className="text-xs font-bold text-slate-800">
-            {i18n.t('visual_card_title')}
+          <Text className="text-xs font-black text-[#1a1a1a] uppercase tracking-wider">
+            📷 {i18n.t('visual_card_title')}
           </Text>
-          <Text className="text-[11px] text-slate-500">
+          <Text className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
             {photoUri
               ? `${i18n.t('visual_status_attached')} [${ext}]`
               : i18n.t('visual_status_empty')}
@@ -56,9 +56,9 @@ export function VisualEvidenceCard({
         </View>
         <TouchableOpacity
           onPress={handleCapture}
-          className="bg-[#002b53] px-3.5 py-1.5 rounded active:opacity-80"
+          className="bg-[#333333] px-3 py-1.5 active:bg-[#1a1a1a]"
         >
-          <Text className="text-white text-xs font-semibold">
+          <Text className="text-white text-[10px] font-black uppercase tracking-wider">
             {photoUri ? i18n.t('btn_retake_media') : i18n.t('btn_open_camera')}
           </Text>
         </TouchableOpacity>
@@ -66,19 +66,19 @@ export function VisualEvidenceCard({
 
       {photoUri && (
         <View className="mt-2">
-          <View className="rounded-lg overflow-hidden border border-slate-300 bg-black/5 mb-3">
+          <View className="border border-[#cbd5e1] bg-black/5 mb-3 overflow-hidden">
             <Image source={{ uri: photoUri }} className="w-full h-44" resizeMode="cover" />
           </View>
           <TouchableOpacity
             onPress={onSendPhoto}
             disabled={isSending}
-            className="w-full bg-[#003366] py-2.5 rounded-lg flex-row items-center justify-center active:opacity-90 shadow-sm"
+            className="w-full bg-[#d93850] py-3 flex-row items-center justify-center active:bg-[#b8273d] shadow-sm"
           >
             {isSending ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <Text className="text-white text-xs font-bold uppercase tracking-wider">
-                {i18n.t('btn_transmit_visual')} ({ext})
+              <Text className="text-white text-xs font-black uppercase tracking-widest">
+                Transmit Image To Java Backend ({ext})
               </Text>
             )}
           </TouchableOpacity>

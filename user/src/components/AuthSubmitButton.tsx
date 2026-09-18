@@ -11,12 +11,12 @@ export function AuthSubmitButton({ onPress, loading, title = 'Enter' }: AuthSubm
     <TouchableOpacity
       onPress={onPress}
       disabled={loading}
-      className="w-full bg-[#003366] py-3.5 rounded-xl mt-6 items-center justify-center active:opacity-90 shadow-md shadow-blue-900/20"
+      className="w-full bg-[#333333] py-4 mt-6 items-center justify-center active:bg-[#1a1a1a] shadow-sm"
     >
       {loading ? (
         <ActivityIndicator size="small" color="#ffffff" />
       ) : (
-        <Text className="text-white text-base font-bold tracking-wide">{title}</Text>
+        <Text className="text-white text-xs font-black uppercase tracking-widest">{title}</Text>
       )}
     </TouchableOpacity>
   );

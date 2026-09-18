@@ -49,6 +49,32 @@ export function getMimeType(extension: string): string {
   }
 }
 
+export async function loginAuth(
+  role: string,
+  identifier: string,
+  password?: string,
+  latitude?: number,
+  longitude?: number
+) {
+  return axios.post(
+    `${API_BASE_URL}/sql/auth/login`,
+    {
+      role,
+      identifier,
+      password,
+      latitude,
+      longitude,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      timeout: 5000,
+    }
+  );
+}
+
 export async function sendHeartbeat(
   number: string,
   lat: number,
@@ -124,5 +150,26 @@ export async function uploadMediaEvidence(
       'ngrok-skip-browser-warning': 'true',
     },
     transformRequest: (data) => data, 
+  });
+}
+
+export async function escalateOfficialAlert(payload: {
+  employeeId?: string | null;
+  role?: string | null;
+  userName?: string | null;
+  department?: string | null;
+  district?: string;
+  state?: string;
+  latitude?: number;
+  longitude?: number;
+  message?: string;
+  riskScore?: number;
+}) {
+  return axios.post(`${API_BASE_URL}/room/alert`, payload, {
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
+    timeout: 5000,
   });
 }

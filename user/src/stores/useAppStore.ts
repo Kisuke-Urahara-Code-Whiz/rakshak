@@ -10,6 +10,8 @@ export interface LocationCoordinates {
 
 export type SupportedLanguage = 'en' | 'hi' | 'as' | 'bn' | 'ne' | 'mni' | 'lus' | 'kha' | 'gar';
 
+export type UserRole = 'Citizen' | 'MDoNER Employee' | 'Zonal Admin' | 'District Admin';
+
 interface AppState {
   isLoading: boolean;
   hasHydrated: boolean;
@@ -22,8 +24,32 @@ interface AppState {
   isLanguageConfigured: boolean;
   setIsLanguageConfigured: (status: boolean) => void;
 
+  // Role and Session Authentication
+  userRole: UserRole;
+  setUserRole: (role: UserRole) => void;
+
   phoneNumber: string | null;
   setPhoneNumber: (phone: string | null) => void;
+
+  employeeId: string | null;
+  setEmployeeId: (id: string | null) => void;
+
+  userName: string | null;
+  setUserName: (name: string | null) => void;
+
+  department: string | null;
+  setDepartment: (dept: string | null) => void;
+
+  token: string | null;
+  setToken: (token: string | null) => void;
+
+  setSession: (session: {
+    role: UserRole;
+    identifier?: string;
+    name?: string;
+    department?: string;
+    token?: string;
+  }) => void;
 
   location: LocationCoordinates | null;
   setLocation: (loc: LocationCoordinates | null) => void;
@@ -55,8 +81,34 @@ export const useAppStore = create<AppState>()(
       isLanguageConfigured: false,
       setIsLanguageConfigured: (status) => set({ isLanguageConfigured: status }),
 
+      userRole: 'Citizen',
+      setUserRole: (role) => set({ userRole: role }),
+
       phoneNumber: null,
       setPhoneNumber: (phone) => set({ phoneNumber: phone }),
+
+      employeeId: null,
+      setEmployeeId: (id) => set({ employeeId: id }),
+
+      userName: null,
+      setUserName: (name) => set({ userName: name }),
+
+      department: null,
+      setDepartment: (dept) => set({ department: dept }),
+
+      token: null,
+      setToken: (token) => set({ token }),
+
+      setSession: (session) =>
+        set({
+          userRole: session.role,
+          phoneNumber: session.role === 'Citizen' ? session.identifier || null : null,
+          employeeId: session.role !== 'Citizen' ? session.identifier || null : null,
+          userName: session.name || null,
+          department: session.department || null,
+          token: session.token || null,
+          isLanguageConfigured: true,
+        }),
 
       location: null,
       setLocation: (loc) => set({ location: loc }),
@@ -73,7 +125,12 @@ export const useAppStore = create<AppState>()(
       resetIncident: () => set({ photoUri: null, voiceUri: null }),
       logout: () =>
         set({
+          userRole: 'Citizen',
           phoneNumber: null,
+          employeeId: null,
+          userName: null,
+          department: null,
+          token: null,
           isLanguageConfigured: false,
           photoUri: null,
           voiceUri: null,
@@ -86,7 +143,12 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         language: state.language,
         isLanguageConfigured: state.isLanguageConfigured,
+        userRole: state.userRole,
         phoneNumber: state.phoneNumber,
+        employeeId: state.employeeId,
+        userName: state.userName,
+        department: state.department,
+        token: state.token,
         photoUri: state.photoUri,
         voiceUri: state.voiceUri,
         location: state.location,
