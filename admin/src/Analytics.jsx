@@ -143,20 +143,19 @@ const TRANSLATIONS = {
 };
 
 export default function Analytics() {
-  // Language State
   const [selectedLang, setSelectedLang] = useState('EN');
   const t = TRANSLATIONS[selectedLang] || TRANSLATIONS.EN;
 
   // Real-Time Telemetry States
-  const [soilMoisture, setSoilMoisture] = useState(450); // Default Normal: >250
-  const [vibration, setVibration] = useState(0.08); // Range: 0 - 1
-  const [riskPercentage, setRiskPercentage] = useState(12); // Range: 0 - 100%
+  const [soilMoisture, setSoilMoisture] = useState(450);
+  const [vibration, setVibration] = useState(0.08);
+  const [riskPercentage, setRiskPercentage] = useState(12);
   const [currentTime, setCurrentTime] = useState('');
   const [smsLogs, setSmsLogs] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Historical Arrays for Real-Time Charts
+  // Historical Arrays for Real-Time Charts (Fixed buffer length)
   const [historicalMoisture, setHistoricalMoisture] = useState([450]);
   const [historicalRainfall, setHistoricalRainfall] = useState([54.0]);
   const [historicalVibration, setHistoricalVibration] = useState([0.08]);
@@ -167,10 +166,9 @@ export default function Analytics() {
   const mapInstanceRef = useRef(null);
   const polygonRef = useRef(null);
 
-  // Location Coordinates (From LocalStorage or default Aizawl)
   const [targetCoords, setTargetCoords] = useState({ lat: 23.7271, lng: 92.7176 });
 
-  // 1. Fetch Location Coordinates from LocalStorage
+  // 1. Fetch Location Coordinates
   useEffect(() => {
     const storedLat = parseFloat(localStorage.getItem('latitude'));
     const storedLng = parseFloat(localStorage.getItem('longitude'));
@@ -191,7 +189,7 @@ export default function Analytics() {
     return () => clearInterval(timer);
   }, []);
 
-  // 3. Pure WebSocket Listener with Initial Query (No Client Timers/Simulations)
+  // 3. WebSocket Listener
   useEffect(() => {
     const clientId = 'front_1';
     const wsUrl = `ws://localhost:8000/ws/front/${clientId}`;
@@ -202,8 +200,6 @@ export default function Analytics() {
 
       socket.onopen = () => {
         console.log('[WS] Connected to FastAPI backend');
-
-        // Send Initial Request Query Payload to fetch initial values
         const queryPayload = {
           type: 'INIT_QUERY',
           client_id: clientId,
@@ -213,7 +209,6 @@ export default function Analytics() {
           device_id: 'RAKSHAK_FRONTEND_01',
           status: 'READY',
         };
-
         socket.send(JSON.stringify(queryPayload));
       };
 
@@ -221,55 +216,53 @@ export default function Analytics() {
         try {
           const data = JSON.parse(event.data);
 
-          // Heartbeat Ping Handler
           if (data.type === 'PING') {
             socket.send(JSON.stringify({ type: 'PONG', status: 'ALIVE' }));
             return;
           }
 
-          // Dynamic Updates pushed by Server
           if (data.type === 'TELEMETRY_UPDATE' || data.type === 'INIT_DATA') {
-            if (data.soil_moisture !== undefined) setSoilMoisture(data.soil_moisture);
-            if (data.vibration !== undefined) setVibration(data.vibration);
-            if (data.risk_percentage !== undefined) setRiskPercentage(data.risk_percentage);
+            const rawSoil = data.soil_moisture !== undefined ? parseFloat(data.soil_moisture) : null;
+            const rawVib = data.vibration !== undefined ? parseFloat(data.vibration) : null;
+            const rawRisk = data.risk_percentage !== undefined ? data.risk_percentage : null;
+
+            if (rawSoil !== null) setSoilMoisture(Math.round(rawSoil));
+            if (rawVib !== null) setVibration(rawVib);
+            if (rawRisk !== null) setRiskPercentage(rawRisk);
             if (data.sms_logs) setSmsLogs(data.sms_logs);
-            console.log(data);
+
             const timeStr = data.timestamp || new Date().toLocaleTimeString();
 
-            // Append live server data to chart histories
-            if (data.soil_moisture !== undefined) {
-              setHistoricalMoisture((prev) => [...prev.slice(-9), data.soil_moisture]);
-              setHistoricalRainfall((prev) => [...prev.slice(-9), data.rainfall_rate || parseFloat((data.soil_moisture * 0.12).toFixed(1))]);
+            // Append live server data with max 12 sliding data points
+            if (rawSoil !== null) {
+              const roundedSoil = Math.round(rawSoil);
+              const rainfall = data.rainfall_rate || parseFloat((roundedSoil * 0.12).toFixed(1));
+
+              setHistoricalMoisture((prev) => [...prev.slice(-11), roundedSoil]);
+              setHistoricalRainfall((prev) => [...prev.slice(-11), rainfall]);
             }
-            if (data.vibration !== undefined) {
-              setHistoricalVibration((prev) => [...prev.slice(-9), data.vibration]);
+            if (rawVib !== null) {
+              setHistoricalVibration((prev) => [...prev.slice(-11), rawVib]);
             }
-            setChartLabels((prev) => [...prev.slice(-9), timeStr]);
+            setChartLabels((prev) => [...prev.slice(-11), timeStr]);
           }
         } catch (err) {
           console.error('[WS] Error parsing incoming WebSocket packet:', err);
         }
       };
 
-      socket.onerror = (err) => {
-        console.warn('[WS] WebSocket Error on ws://localhost:8000/ws/front/front_1', err);
-      };
-
-      socket.onclose = () => {
-        console.log('[WS] Connection closed');
-      };
+      socket.onerror = (err) => console.warn('[WS] WebSocket Error:', err);
+      socket.onclose = () => console.log('[WS] Connection closed');
     } catch (e) {
       console.warn('[WS] Could not initiate WebSocket connection.');
     }
 
     return () => {
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.close();
-      }
+      if (socket && socket.readyState === WebSocket.OPEN) socket.close();
     };
   }, [selectedLang, targetCoords]);
 
-  // 4. Initialize Leaflet GIS Map & Polygon Heatmap Overlay
+  // 4. Initialize Leaflet Map
   useEffect(() => {
     if (!document.getElementById('leaflet-css')) {
       const link = document.createElement('link');
@@ -337,18 +330,18 @@ export default function Analytics() {
     }
   }, [targetCoords]);
 
-  // 5. Dynamic Heatmap Polygon Color Adjustment
+  // 5. Heatmap Polygon Updates
   useEffect(() => {
     if (!polygonRef.current) return;
 
-    let strokeColor = '#10B981'; // Green (>250)
+    let strokeColor = '#10B981';
     let fillColor = '#10B981';
 
     if (soilMoisture < 200) {
-      strokeColor = '#EF4444'; // Red (<200)
+      strokeColor = '#EF4444';
       fillColor = '#EF4444';
     } else if (soilMoisture >= 200 && soilMoisture <= 250) {
-      strokeColor = '#F59E0B'; // Orange (200-250)
+      strokeColor = '#F59E0B';
       fillColor = '#F59E0B';
     }
 
@@ -360,7 +353,7 @@ export default function Analytics() {
   }, [soilMoisture]);
 
   // Status Calculations
-  const isHighRisk = soilMoisture < 200 || riskPercentage > 50;
+  const isHighRisk = soilMoisture < 200 || riskPercentage > 85;
 
   const getStatusText = () => {
     if (soilMoisture < 200 || riskPercentage > 50) return t.statusCritical;
@@ -384,7 +377,7 @@ export default function Analytics() {
         borderColor: '#0284C7',
         backgroundColor: 'rgba(2, 132, 199, 0.15)',
         fill: true,
-        tension: 0.3,
+        tension: 0.4, // Smoother line curve
         borderWidth: 2,
         pointRadius: 3,
       },
@@ -412,22 +405,61 @@ export default function Analytics() {
         borderColor: '#E11D48',
         backgroundColor: 'rgba(225, 29, 72, 0.1)',
         fill: true,
-        tension: 0.2,
+        tension: 0.3,
         borderWidth: 2,
         pointRadius: 2,
       },
     ],
   };
 
-  const chartOptions = {
+  // FIXED Y-AXIS CHART OPTIONS TO PREVENT GRAPH FLUTTERING/JUMPING
+  const moistureChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: { duration: 300 }, // Smooth transition
     plugins: {
       legend: { display: false },
     },
     scales: {
       x: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { size: 10 } } },
-      y: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { size: 10 } } },
+      y: {
+        min: 0,
+        max: 600, // FIXED AXIS BOUNDS
+        grid: { color: '#E2E8F0' },
+        ticks: { stepSize: 100, color: '#64748B', font: { size: 10 } },
+      },
+    },
+  };
+
+  const rainfallChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 300 },
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { size: 10 } } },
+      y: {
+        min: 0,
+        max: 80, // FIXED AXIS BOUNDS
+        grid: { color: '#E2E8F0' },
+        ticks: { color: '#64748B', font: { size: 10 } },
+      },
+    },
+  };
+
+  const vibrationChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 300 },
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { size: 10 } } },
+      y: {
+        min: 0.0,
+        max: 1.0, // FIXED AXIS BOUNDS
+        grid: { color: '#E2E8F0' },
+        ticks: { color: '#64748B', font: { size: 10 } },
+      },
     },
   };
 
@@ -451,55 +483,8 @@ export default function Analytics() {
     ]);
   };
 
-  const fastapiSnippetCode = `from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-import json
-import asyncio
-import random
-from datetime import datetime
-
-router = APIRouter()
-
-@router.websocket("/ws/front/{client_id}")
-async def websocket_front(websocket: WebSocket, client_id: str):
-    manager = websocket.app.state.manager
-    await manager.connect("FRONT", client_id, websocket)
-    print(f"[WS] Connected: FRONT Client '{client_id}'")
-    
-    try:
-        while True:
-            try:
-                raw_data = await asyncio.wait_for(websocket.receive_text(), timeout=60.0)
-            except asyncio.TimeoutError:
-                await websocket.send_json({"type": "PING"})
-                continue
-                
-            try:
-                payload = json.loads(raw_data)
-            except (json.JSONDecodeError, TypeError):
-                payload = {}
-                
-            # Process Frontend Initial Query Request
-            if payload.get("type") == "INIT_QUERY":
-                lat = payload.get("latitude")
-                lng = payload.get("longitude")
-                lang = payload.get("language")
-                print(f"[FRONT #{client_id}] Received INIT Query -> Lat: {lat}, Lng: {lng}, Lang: {lang}")
-                
-            print(f"[FRONT #{client_id}] Status: {payload.get('status')} | Device: {payload.get('device_id')}")
-
-    except WebSocketDisconnect as e:
-        print(f"[WS] Disconnected cleanly: FRONT Client '{client_id}' (Code: {e.code})")
-    except Exception as e:
-        print(f"[WS] Exception on FRONT Client '{client_id}': {e}")
-    finally:
-        manager.disconnect("FRONT", client_id)
-        try:
-            await websocket.close()
-        except Exception:
-            pass`;
-
   const copyCodeToClipboard = () => {
-    navigator.clipboard.writeText(fastapiSnippetCode);
+    navigator.clipboard.writeText('// FastAPI backend snippet');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -524,7 +509,6 @@ async def websocket_front(websocket: WebSocket, client_id: str):
           </div>
         </div>
 
-        {/* Right Info Bar & Language Select */}
         <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
           <div className="hidden lg:block text-slate-600 bg-slate-100 px-3 py-1.5 rounded-md border border-slate-200">
             {t.corridor}
@@ -535,7 +519,6 @@ async def websocket_front(websocket: WebSocket, client_id: str):
           </div>
           <div className="text-slate-500 font-semibold">{currentTime}</div>
 
-          {/* Language Switcher Dropdown */}
           <select
             value={selectedLang}
             onChange={(e) => setSelectedLang(e.target.value)}
@@ -547,12 +530,7 @@ async def websocket_front(websocket: WebSocket, client_id: str):
             <option value="AS">অসমীয়া (Assamese)</option>
           </select>
 
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-md text-xs font-sans transition-colors"
-          >
-            {t.viewEndpoint}
-          </button>
+          
         </div>
       </header>
 
@@ -572,23 +550,22 @@ async def websocket_front(websocket: WebSocket, client_id: str):
               </div>
             </div>
 
-            {/* Leaflet Map Canvas */}
             <div
               ref={mapContainerRef}
               className="w-full h-80 rounded-lg border border-slate-200 z-0 bg-slate-50"
             />
           </div>
 
-          {/* SOIL MOISTURE GRAPH */}
+          {/* STABILIZED SOIL MOISTURE GRAPH */}
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-bold text-slate-800">{t.soilMoisture} (Sensor Raw Values)</h3>
+              <h3 className="text-sm font-bold text-slate-800">{t.soilMoisture} (Stabilized Sensor Values)</h3>
               <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-sky-100 text-sky-800">
                 {soilMoisture}
               </span>
             </div>
             <div className="h-44">
-              <Line data={moistureChartData} options={chartOptions} />
+              <Line data={moistureChartData} options={moistureChartOptions} />
             </div>
           </div>
 
@@ -596,14 +573,14 @@ async def websocket_front(websocket: WebSocket, client_id: str):
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-bold text-slate-800">
-                {t.rainfall} (Proportional to Soil Moisture)
+                {t.rainfall} 
               </h3>
               <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                {(soilMoisture * 0.12).toFixed(1)} mm/h
+                {((485 - soilMoisture )* 0.056).toFixed(1)} mm/h
               </span>
             </div>
             <div className="h-44">
-              <Bar data={rainfallChartData} options={chartOptions} />
+              <Bar data={rainfallChartData} options={rainfallChartOptions} />
             </div>
           </div>
         </div>
@@ -623,7 +600,6 @@ async def websocket_front(websocket: WebSocket, client_id: str):
               </div>
             </div>
 
-            {/* Quick Metrics Bar */}
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 font-mono text-xs">
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                 <p className="text-slate-500 text-[10px]">SOIL MOISTURE</p>
@@ -645,7 +621,7 @@ async def websocket_front(websocket: WebSocket, client_id: str):
               </span>
             </div>
             <div className="h-40">
-              <Line data={vibrationChartData} options={chartOptions} />
+              <Line data={vibrationChartData} options={vibrationChartOptions} />
             </div>
           </div>
 
@@ -668,7 +644,7 @@ async def websocket_front(websocket: WebSocket, client_id: str):
             </ul>
           </div>
 
-          {/* SMS EARLY WARNING DISPATCH CONSOLE (Only Active on High Risk) */}
+          {/* SMS EARLY WARNING CONSOLE */}
           <div
             className={`rounded-xl p-4 shadow-sm border transition-all ${
               isHighRisk ? 'bg-white border-red-300 ring-2 ring-red-100' : 'bg-slate-50 border-slate-200 opacity-70'
@@ -737,15 +713,12 @@ async def websocket_front(websocket: WebSocket, client_id: str):
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full border border-slate-200 overflow-hidden">
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
               <h3 className="font-bold text-sm font-mono">{t.fastapiModalTitle}</h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white text-lg font-bold"
-              >
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white text-lg font-bold">
                 &times;
               </button>
             </div>
             <div className="p-4 bg-slate-950 font-mono text-xs text-emerald-400 overflow-x-auto max-h-96">
-              <pre>{fastapiSnippetCode}</pre>
+              <pre>{"// FastAPI WebSocket code"}</pre>
             </div>
             <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
               <button

@@ -16,6 +16,8 @@ async def lifespan(app: FastAPI):
     app.state.soil_queue = deque(maxlen=50)
     app.state.real_soil = 350
     app.state.vibration = 0.1
+    app.state.smsLimit = 2
+    app.state.sms=0
     yield
 
 app = FastAPI(lifespan=lifespan)

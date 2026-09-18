@@ -2,6 +2,8 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
 from datetime import datetime
 
+import requests
+
 router = APIRouter()
 
 def tel(realsoil: float, vibration: float,riskPercentage: float):
@@ -20,22 +22,62 @@ def tel(realsoil: float, vibration: float,riskPercentage: float):
     if risk_pct > 50 or realsoil < 200:
         timestamp = datetime.now().strftime("%H:%M:%S")
         sms_logs = [
-            {
-                "id": 1,
-                "recipient": "+919830123456",
-                "status": "SENT",
-                "type": "Registered User",
-                "timestamp": timestamp,
-                "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
-            },
-            {
-                "id": 2,
-                "recipient": "+919874987654",
-                "status": "SENT",
-                "type": "Unregistered User",
-                "timestamp": timestamp,
-                "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
-            }
+        {
+            "id": 1,
+            "recipient": "+919830123456",
+            "status": "SENT",
+            "type": "Registered User",
+            "timestamp": timestamp,
+            "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+        },
+        {
+            "id": 2,
+            "recipient": "+919874987654",
+            "status": "SENT",
+            "type": "Unregistered User",
+            "timestamp": timestamp,
+            "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+        },
+        {
+            "id": 3,
+            "recipient": "+916289645167",
+            "status": "SENT",
+            "type": "Unregistered User",
+            "timestamp": timestamp,
+            "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+        },
+        {
+            "id": 4,
+            "recipient": "+918337049905",
+            "status": "SENT",
+            "type": "Rakshak App User",
+            "timestamp": timestamp,
+            "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+        },
+        {
+            "id": 5,
+            "recipient": "+917439407308",
+            "status": "SENT",
+            "type": "Driver",
+            "timestamp": timestamp,
+            "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+        },
+        {
+            "id": 6,
+            "recipient": "+918159073507",
+            "status": "SENT",
+            "type": "MDoner Employee",
+            "timestamp": timestamp,
+            "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+        },
+        {
+            "id": 7,
+            "recipient": "+916290289863",
+            "status": "SENT",
+            "type": "Unregistered User",
+            "timestamp": timestamp,
+            "message": f"CRITICAL: High Landslide Risk ({risk_pct}%) detected!"
+        }   
         ]
         
     payload = {
@@ -54,6 +96,8 @@ def tel(realsoil: float, vibration: float,riskPercentage: float):
 async def websocket_soil(websocket: WebSocket, client_id: str):
     manager = websocket.app.state.manager
     soil_queue = websocket.app.state.soil_queue
+    sms = websocket.app.state.sms
+    limit = websocket.app.state.smsLimit
     riskJson = websocket.app.state.riskTemp
 
     await manager.connect("SOIL", client_id, websocket)
@@ -108,6 +152,12 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                 }
                 print(f"🚨 [ALERT] Threshold breached! Soil value = {soil_value}")
                 # Pass JSON serialized strings or dicts according to manager signature
+                try:
+                    if(sms<=limit):
+                        requests.post("https://telesthetic-tridimensionally-margarete.ngrok-free.dev/sms/send-alert")
+                        sms+=1
+                except(e):
+                    pass
                 if hasattr(manager, "broadcast_to_role"):
                     await manager.broadcast_to_role(json.dumps(alert_message), "ESP")
 
