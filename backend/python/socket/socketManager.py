@@ -141,28 +141,27 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
 
             print(f"[SOIL] Value: {soil_value} | Vibration: {vibration_val}")
             rp = 0.0
-            def trunk(val):
-                risk = 90
-                if val < 200:
-                    val = 116.0 + random.randint(-5, 3)
-                    risk = 91.0 + random.randint(0, 3)
-                if val > 200 and val < 250:
-                    risk = 69.0 + random.randint(0, 6)
-                    val = 250 + random.randint(-25, 10)
-                if val >= 250 and val < 350:
-                     risk = 35.0 + random.randint(-1, 6)
-                if val >= 350 and val <=450:
-                    risk = 25.0 + random.randint(-1, 6)
-                if val > 450:
-                    risk = 20.0 + random.randint(0, 6)
-                    val = 450 + random.randint(-5, 5)
-                return (val,risk)
-            if(data_in.get("riskPercentage")):
-                rp = data_in.get("riskPercentage")
+            def trunk(val, vib=0.0):
+                clamped = min(max(float(val), 100.0), 450.0)
+                base = ((450.0 - clamped) / 350.0) * 75.0 + 15.0
+                v_boost = float(vib) * 20.0
+                return round(min(100.0, max(5.0, base + v_boost)))
+
+            if data_in.get("riskPercentage") is not None:
+                try:
+                    rp = float(data_in.get("riskPercentage"))
+                except (ValueError, TypeError):
+                    rp = trunk(soil_value, vibration_val)
+            elif data_in.get("risk_percentage") is not None:
+                try:
+                    rp = float(data_in.get("risk_percentage"))
+                except (ValueError, TypeError):
+                    rp = trunk(soil_value, vibration_val)
             else:
-                rp = trunk(soil_value)[1]
+                rp = trunk(soil_value, vibration_val)
+
             # Generate Telemetry Update Payload
-            telemetry_payload = tel(soil_value, vibration_val,rp)
+            telemetry_payload = tel(soil_value, vibration_val, rp)
 
             # ALERT TRIGGER
             if soil_value < 200:

@@ -16,6 +16,9 @@ export const ENV = {
   // Python Telemetry & Risk WebSocket URL (serves /ws/front/{client_id})
   PYTHON_WS_URL: import.meta.env.VITE_PYTHON_WS_URL || 'ws://localhost:8000',
 
+  // IoT Sensor & ESP Node WebSocket URL (serves /ws/soil/{device_id} and /ws/esp/{device_id})
+  IOT_WS_URL: import.meta.env.VITE_IOT_WS_URL || import.meta.env.VITE_PYTHON_WS_URL || 'ws://localhost:8000',
+
   // WebSocket automatic reconnection backoff interval (ms)
   WS_RECONNECT_INTERVAL: Number(import.meta.env.VITE_WS_RECONNECT_INTERVAL) || 5000,
 

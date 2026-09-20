@@ -35,7 +35,7 @@ export default function DashboardLayout() {
       return;
     }
     if (isCitizen) {
-      if (p.includes('/app/alerts') || p.includes('/app/stations')) {
+      if (p.includes('/app/alerts') || p.includes('/app/stations') || p.includes('/app/simulator')) {
         navigate('/app/risk-map', { replace: true });
       }
     } else if (isZonalOrDistrict) {
@@ -153,6 +153,19 @@ export default function DashboardLayout() {
                 SOTA
               </span>
             </Link>
+
+            {/* IoT Simulator: visible to all roles except Citizen */}
+            {!isCitizen && (
+              <Link 
+                to="/app/simulator" 
+                className={`text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 ${location.pathname.includes('simulator') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
+              >
+                <span>{t('nav_iot') || 'IoT'}</span>
+                <span className="text-[9px] bg-slate-900 text-cyan-400 px-1.5 py-0.5 rounded font-mono font-black uppercase">
+                  SIM
+                </span>
+              </Link>
+            )}
           </nav>
         </div>
 
