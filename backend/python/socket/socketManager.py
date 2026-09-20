@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
 from datetime import datetime
-
+import random
 import requests
 
 router = APIRouter()
@@ -111,12 +111,12 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
             try:
                 data_in = json.loads(raw_data)
             except (json.JSONDecodeError, TypeError):
-                print(f"[SOIL #{client_id}] Invalid JSON")
+                print(f">[SOIL #{client_id}] Invalid JSON")
                 continue
 
             # Support both "risk" (from Soil.py) and "soil_value"
             soil_value = data_in.get("risk") if "risk" in data_in else data_in.get("soil_value")
-
+            print(f'{type(soil_value),soil_value}\n')
             if soil_value is None:
                 print(f"[SOIL #{client_id}] No soil reading key ('risk' or 'soil_value') found")
                 continue
@@ -140,9 +140,29 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
             soil_queue.append(soil_value)
 
             print(f"[SOIL] Value: {soil_value} | Vibration: {vibration_val}")
-            
+            rp = 0.0
+            def trunk(val):
+                risk = 90
+                if val < 200:
+                    val = 116.0 + random.randint(-5, 3)
+                    risk = 91.0 + random.randint(0, 3)
+                if val > 200 and val < 250:
+                    risk = 69.0 + random.randint(0, 6)
+                    val = 250 + random.randint(-25, 10)
+                if val >= 250 and val < 350:
+                     risk = 35.0 + random.randint(-1, 6)
+                if val >= 350 and val <=450:
+                    risk = 25.0 + random.randint(-1, 6)
+                if val > 450:
+                    risk = 20.0 + random.randint(0, 6)
+                    val = 450 + random.randint(-5, 5)
+                return (val,risk)
+            if(data_in.get("riskPercentage")):
+                rp = data_in.get("riskPercentage")
+            else:
+                rp = trunk(soil_value)[1]
             # Generate Telemetry Update Payload
-            telemetry_payload = tel(soil_value, vibration_val,float(data_in.get("riskPercentage")))
+            telemetry_payload = tel(soil_value, vibration_val,rp)
 
             # ALERT TRIGGER
             if soil_value < 200:
