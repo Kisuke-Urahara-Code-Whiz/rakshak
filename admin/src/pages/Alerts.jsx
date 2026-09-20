@@ -18,7 +18,17 @@ const NE_ALERT_TARGETS = [
 ];
 
 export default function Alerts() {
-  const { activeAlert, dismissAlert, triggerSimulatedAlert, wsUrl, wsStatus, isWsConnected } = useAlert();
+  const {
+    activeAlert,
+    dismissAlert,
+    triggerSimulatedAlert,
+    wsUrl,
+    wsStatus,
+    isWsConnected,
+    liveRiskPercentage,
+    soilMoisture,
+    vibration,
+  } = useAlert();
   const { t } = useLanguage();
 
   // Role info & session
@@ -45,10 +55,14 @@ export default function Alerts() {
   const [selectedTarget, setSelectedTarget] = useState(validTargets[0]);
   const [isDispatching, setIsDispatching] = useState(false);
 
-  // Active Alert Zone Matching: Zonal Admin & District Officer only get alerts for their specific zone!
+  // Active Alert Zone Matching: Zonal Admin & District Officer only get alerts for their specific zone,
+  // EXCEPT autonomous IoT critical alerts which are broadcast to all command centers!
   const alertMatchesOfficerZone = () => {
     if (!activeAlert) return false;
     if (isMdoner) return true; // MDoNER can see and triage all alerts
+    if (activeAlert.isAutonomous || activeAlert.type?.includes('Autonomous') || activeAlert.type?.includes('IoT')) {
+      return true; // Autonomous critical IoT breaches are regional emergencies visible to all
+    }
 
     const alertDistrict = (activeAlert.district || activeAlert.kiosk?.district || '').toLowerCase();
     const alertState = (activeAlert.state || activeAlert.kiosk?.state || '').toLowerCase();
@@ -66,56 +80,36 @@ export default function Alerts() {
 
   const totalSmsCount = 1420;
 
-  const handleDispatchStateAlert = async (target = selectedTarget) => {
+  const handleDispatchStateAlert = (target = selectedTarget) => {
     setIsDispatching(true);
-    try {
-      await fetch(`${ENV.API_BASE_URL}/room/alert`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employeeId: session?.identifier || (isMdoner ? 'EMP-NER-001' : isZonal ? 'ZONAL-SK-01' : 'DIST-SK-NORTH'),
-          role: userRole,
-          userName: session?.name || `${userRole} Command`,
-          department: session?.department || `${target.state} Disaster Cell`,
-          district: target.district,
-          state: target.state,
-          latitude: target.lat,
-          longitude: target.lng,
-          message: `CRITICAL TACTICAL ALERT: Landslide & Ground Displacement Warning for ${target.district}, ${target.state}. Evacuation protocol active.`,
-          riskScore: 92,
-        }),
-      });
-    } catch (err) {
-      console.warn('Backend alert post offline, triggering local simulated alert:', err);
-      triggerSimulatedAlert({
-        type: 'KIOSK_ALERT_EVENT',
-        timestamp: new Date().toISOString(),
-        message: `CRITICAL TACTICAL ALERT: Siren engaged for ${target.district}, ${target.state}.`,
-        kiosk: {
-          id: target.kioskId,
-          name: `${target.district} ADM5-Node (${target.state})`,
-          district: target.district,
-          state: target.state,
-          lat: target.lat,
-          lng: target.lng,
-          coordinates: { lat: target.lat, lng: target.lng },
-          status: 'Warning',
-          riskLevel: 'High',
-          type: 'Official Tactical Field Command',
-        },
-        hazardUpdate: {
-          parameter: 'landslide',
-          regionName: target.district,
-          displayLevel: 'High',
-        },
-      });
-    } finally {
-      setIsDispatching(false);
-    }
+    triggerSimulatedAlert({
+      type: 'KIOSK_ALERT_EVENT',
+      timestamp: new Date().toISOString(),
+      message: `CRITICAL TACTICAL ALERT: Siren engaged for ${target.district}, ${target.state}. Evacuation protocol active.`,
+      kiosk: {
+        id: target.kioskId,
+        name: `${target.district} ADM5-Node (${target.state})`,
+        district: target.district,
+        state: target.state,
+        lat: target.lat,
+        lng: target.lng,
+        coordinates: { lat: target.lat, lng: target.lng },
+        status: 'Warning',
+        riskLevel: 'High',
+        riskScore: 92,
+        type: 'Official Tactical Field Command',
+      },
+      hazardUpdate: {
+        parameter: 'landslide',
+        regionName: target.district,
+        displayLevel: 'High',
+      },
+    });
+    setIsDispatching(false);
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 w-full bg-[#f4f6f8] overflow-hidden p-6 select-none">
+    <div className="flex-1 flex flex-col h-full min-h-0 w-full bg-[#f4f6f8] overflow-y-auto p-4 sm:p-6 select-none">
       <PageHeader
         title={t('alerts_title')}
         subtitle={t('alerts_subtitle')}
@@ -178,47 +172,102 @@ export default function Alerts() {
 
       {/* Display alert ONLY when an active WebSocket payload for the officer's zone is received */}
       {displayedAlert ? (
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5 overflow-hidden">
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 overflow-hidden">
           <TowerBroadcastCard activeAlert={displayedAlert} />
           <SmsDispatchLog recipients={EMERGENCY_RECIPIENTS} totalSmsCount={totalSmsCount} />
         </div>
       ) : (
-        <div className="flex-1 min-h-0 bg-white border border-[#cbd5e1] shadow-sm flex flex-col items-center justify-center p-8 text-center">
-          <div className="max-w-xl flex flex-col items-center">
-            {/* Status Radar / Standby Icon */}
-            <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-2 border-slate-200 animate-ping opacity-30"></div>
-              <div className="w-16 h-16 rounded-full bg-[#f4f6f8] border-2 border-slate-300 flex items-center justify-center">
-                <span className="text-2xl">📡</span>
+        <div className="flex-1 min-h-0 bg-white border border-[#cbd5e1] shadow-sm flex flex-col overflow-y-auto p-4 sm:p-6">
+          <div className="max-w-lg w-full mx-auto my-auto flex flex-col items-center text-center">
+            {/* Live Socket Status Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 border border-slate-300 text-slate-700 text-[11px] font-mono font-bold uppercase mb-3 shadow-2xs">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isWsConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
+              <span>{isWsConnected ? 'PYTHON TELEMETRY SOCKET CONNECTED (PORT 8000)' : 'CONNECTING TO PYTHON SOCKET...'}</span>
+            </div>
+
+            {/* Prominent Current Risk Display (Direct from Python Socket Server) */}
+            <div className="w-full bg-[#f8fafc] border border-slate-200 p-4 sm:p-5 mb-3.5 flex flex-col items-center shadow-xs">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                CURRENT GEOTECHNICAL GROUND RISK
+              </span>
+              <div className="flex items-baseline gap-2.5 my-2">
+                <span className={`text-5xl font-black font-mono tracking-tight ${
+                  liveRiskPercentage !== null && liveRiskPercentage >= 75
+                    ? 'text-[#d93850]'
+                    : liveRiskPercentage !== null && liveRiskPercentage >= 50
+                    ? 'text-amber-500'
+                    : 'text-emerald-600'
+                }`}>
+                  {liveRiskPercentage !== null ? `${liveRiskPercentage}%` : '15%'}
+                </span>
+                <span className={`text-xs font-black uppercase px-2.5 py-0.5 rounded font-mono border ${
+                  liveRiskPercentage !== null && liveRiskPercentage >= 75
+                    ? 'bg-rose-50 border-rose-300 text-rose-700'
+                    : liveRiskPercentage !== null && liveRiskPercentage >= 50
+                    ? 'bg-amber-50 border-amber-300 text-amber-700'
+                    : 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                }`}>
+                  {liveRiskPercentage !== null && liveRiskPercentage >= 75
+                    ? 'CRITICAL HAZARD'
+                    : liveRiskPercentage !== null && liveRiskPercentage >= 50
+                    ? 'ELEVATED CAUTION'
+                    : 'NOMINAL STABILITY'}
+                </span>
+              </div>
+
+              {/* Progress Bar towards 75% threshold */}
+              <div className="w-full h-2 bg-slate-200 overflow-hidden rounded-full mb-2.5">
+                <div
+                  className={`h-full transition-all duration-300 ${
+                    liveRiskPercentage !== null && liveRiskPercentage >= 75
+                      ? 'bg-rose-600'
+                      : liveRiskPercentage !== null && liveRiskPercentage >= 50
+                      ? 'bg-amber-500'
+                      : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${liveRiskPercentage !== null ? liveRiskPercentage : 15}%` }}
+                />
+              </div>
+
+              {/* Live Sensor Readings */}
+              <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-slate-200 w-full text-center text-xs font-mono font-bold text-slate-600">
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Soil Moisture:</span>
+                  <span className="text-slate-800 font-black">{soilMoisture !== null ? `${soilMoisture} ADC` : '420 ADC'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Vibration:</span>
+                  <span className="text-slate-800 font-black">{vibration !== null ? `${vibration} g` : '0.02 g'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Trigger Threshold:</span>
+                  <span className="text-rose-600 font-black">≥ 75% Risk</span>
+                </div>
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-mono font-bold uppercase mb-3">
-              <span className={`w-2 h-2 rounded-full ${isWsConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
-              <span>{isWsConnected ? 'WEBSOCKET ACTIVE • CHANNEL STANDBY' : 'WEBSOCKET CONNECTING...'}</span>
-            </div>
-
-            <h3 className="text-lg font-black uppercase tracking-wider text-[#1a1a1a] mb-2">
-              {t('alerts_standby_title')}
-            </h3>
-
-            <p className="text-xs text-[#666666] leading-relaxed max-w-md mb-6">
-              {t('alerts_standby_desc')}
+            <p className="text-xs text-[#666666] leading-relaxed w-full mb-3.5 px-2">
+              Receiving live risk percentage directly from the Python socket server. When risk crosses the critical threshold (≥ 75%), emergency acoustic sirens and automated incident dispatches trigger immediately.
             </p>
 
-            <div className="p-3 bg-[#f8fafc] border border-[#e2e8f0] w-full max-w-md text-left font-mono text-[11px] text-slate-600">
-              <div className="flex justify-between pb-1 border-b border-slate-200">
-                <span className="font-bold text-slate-400">ENDPOINT:</span>
-                <span className="text-slate-800 font-bold">{wsUrl}</span>
+            {/* Network & Endpoint Details with proper wrapping */}
+            <div className="p-3 bg-[#f8fafc] border border-[#e2e8f0] w-full text-left font-mono text-[11px] text-slate-600 space-y-1.5 mb-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-slate-200">
+                <span className="font-bold text-slate-400 shrink-0 uppercase">ENDPOINT:</span>
+                <span className="text-slate-800 font-bold break-all text-[10.5px] sm:text-right" title={wsUrl}>
+                  {wsUrl}
+                </span>
               </div>
-              <div className="flex justify-between pt-1">
-                <span className="font-bold text-slate-400">SUBSCRIBED EVENT:</span>
-                <span className="text-[#d93850] font-bold">KIOSK_ALERT_EVENT</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-0.5">
+                <span className="font-bold text-slate-400 shrink-0 uppercase">SUBSCRIBED STREAM:</span>
+                <span className="text-emerald-600 font-bold text-[10.5px] sm:text-right">
+                  TELEMETRY_UPDATE (PORT 8000)
+                </span>
               </div>
             </div>
 
             {/* Go to Analytics Section */}
-            <div className="mt-6 w-full max-w-md p-4 bg-slate-50 border border-slate-200 text-left flex items-center justify-between shadow-2xs">
+            <div className="w-full p-3.5 bg-slate-50 border border-slate-200 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
               <div>
                 <div className="text-xs font-black uppercase text-slate-800 flex items-center gap-1.5">
                   <span>📊</span>
@@ -235,9 +284,10 @@ export default function Alerts() {
                   localStorage.setItem('longitude', '92.4273');
                   localStorage.setItem('towerName', 'Unakoti ADM5-Node 85');
                 }}
-                className="bg-[#0284c7] hover:bg-[#0369a1] text-white px-3 py-1.5 font-bold text-xs uppercase tracking-wider transition-colors shrink-0 ml-3"
+                className="bg-[#0284c7] hover:bg-[#0369a1] text-white px-3.5 py-1.5 font-bold text-xs uppercase tracking-wider transition-colors shrink-0 flex items-center justify-center gap-1 shadow-sm"
               >
-                Go to Analytics →
+                <span>Go to Analytics</span>
+                <span>→</span>
               </Link>
             </div>
           </div>

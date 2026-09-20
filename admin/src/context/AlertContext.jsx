@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import kioskData from '../data/kioskData.json';
 import { setHazardOverride, clearHazardOverrides } from '../mapUtils';
 import audioAlertService from '../services/audioAlertService';
@@ -147,30 +147,140 @@ export function AlertProvider({ children }) {
     window.dispatchEvent(new CustomEvent('rakshakNewAlertSound', { detail: alertObject }));
   }, []);
 
-  // WebSocket Connection Hook
+  // Live Python Telemetry & Risk State (Direct from Port 8000)
+  const [liveRiskPercentage, setLiveRiskPercentage] = useState(15);
+  const [soilMoisture, setSoilMoisture] = useState(420);
+  const [vibration, setVibration] = useState(0.02);
+  const [telemetryTimestamp, setTelemetryTimestamp] = useState(null);
+  const lastAlertTimeRef = useRef(0);
+
+  const pythonWsBase = (ENV.PYTHON_WS_URL || 'ws://localhost:8000').replace(/\/+$/, '');
+  const pythonAlertWsUrl = `${pythonWsBase}/ws/front/front_alerts`;
+
+  // Autonomous critical alert trigger directly from Python telemetry stream
+  const triggerCriticalRiskAlert = useCallback(
+    (score, data = {}) => {
+      const now = Date.now();
+      if (activeAlert && now - lastAlertTimeRef.current < 25000) {
+        return;
+      }
+      lastAlertTimeRef.current = now;
+
+      console.warn(`[AlertContext] 🚨 CRITICAL RISK THRESHOLD CROSSED (${score}%): Triggering Alert & Siren!`);
+
+      const alertTimestamp = data.timestamp
+        ? `${new Date().toLocaleDateString()} ${data.timestamp}`
+        : new Date().toISOString();
+
+      const criticalPayload = {
+        type: 'KIOSK_ALERT_EVENT',
+        id: `ALERT-UNAKOTI-${Date.now()}`,
+        timestamp: alertTimestamp,
+        message: `CRITICAL TACTICAL ALERT: Severe landslide risk (${score}%) detected by IoT sensor telemetry for Unakoti, Tripura (Node 85). Immediate evacuation protocol active.`,
+        source: 'Direct Python WebSocket (Port 8000)',
+        isAutonomous: true,
+        kiosk: {
+          id: 'KIO-TR-085',
+          name: 'Unakoti ADM5-Node 85',
+          district: 'Unakoti',
+          state: 'Tripura',
+          lat: 23.7548,
+          lng: 92.4273,
+          coordinates: { lat: 23.7548, lng: 92.4273 },
+          status: 'Critical Alert',
+          riskLevel: 'Critical',
+          riskScore: score,
+          type: 'Autonomous IoT Field Station',
+          sensorsActive: 6,
+        },
+        hazardUpdate: {
+          parameter: 'landslide',
+          regionName: 'Unakoti',
+          displayLevel: 'High',
+        },
+      };
+
+      // Trigger local siren and active alert state immediately
+      handleAlertEvent(criticalPayload);
+    },
+    [activeAlert, handleAlertEvent]
+  );
+
+  // WebSocket Connection Hook (Directly connects to Python Port 8000 socket server)
   const {
     status: wsConnectionStatus,
     isConnected: isWsConnected,
     sendMessage: sendWsMessage,
     reconnect: reconnectWs,
   } = useWebSocket({
-    url: ENV.WS_ALERT_URL,
-    fallbackUrl: `${ENV.API_BASE_URL.replace(/^http/, 'ws')}/room/ws/alerts`,
+    url: pythonAlertWsUrl,
+    fallbackUrl: `${pythonWsBase}/ws/front/web_alert_listener`,
     enabled: true,
     autoReconnect: true,
     reconnectInterval: ENV.WS_RECONNECT_INTERVAL,
     onOpen: () => {
-      console.log(`[AlertContext] Connected to live WebSocket: ${ENV.WS_ALERT_URL}`);
+      console.log(`[AlertContext] Connected to live Python WebSocket: ${pythonAlertWsUrl}`);
+      try {
+        sendWsMessage(
+          JSON.stringify({
+            type: 'INIT_QUERY',
+            client_id: 'front_alerts',
+            device_id: 'RAKSHAK_FRONTEND_01',
+            status: 'READY',
+          })
+        );
+      } catch {}
     },
     onMessage: (data) => {
-      console.log('[AlertContext] Inbound WebSocket message:', data);
-      handleAlertEvent(data);
+      if (!data) return;
+
+      if (data.type === 'PING') {
+        try {
+          sendWsMessage(JSON.stringify({ type: 'PONG', status: 'ALIVE' }));
+        } catch {}
+        return;
+      }
+
+      // Handle real-time upload notification from media-service
+      if (data.type === 'UPLOAD_EVENT') {
+        window.dispatchEvent(new CustomEvent('rakshakNewUpload', { detail: data.upload }));
+        return;
+      }
+
+      // Handle direct telemetry updates from Python socket (just like Analytics.jsx)
+      if (data.type === 'TELEMETRY_UPDATE' || data.type === 'INIT_DATA') {
+        const rawSoil = data.soil_moisture !== undefined ? parseFloat(data.soil_moisture) : null;
+        const rawVib = data.vibration !== undefined ? parseFloat(data.vibration) : null;
+        const rawRisk = data.risk_percentage !== undefined 
+          ? parseFloat(data.risk_percentage) 
+          : (data.risk !== undefined ? parseFloat(data.risk) : null);
+
+        if (rawSoil !== null && !isNaN(rawSoil)) setSoilMoisture(Math.round(rawSoil));
+        if (rawVib !== null && !isNaN(rawVib)) setVibration(parseFloat(rawVib.toFixed(2)));
+        if (data.timestamp) setTelemetryTimestamp(data.timestamp);
+
+        if (rawRisk !== null && !isNaN(rawRisk)) {
+          const score = Math.max(0, Math.min(100, Math.round(rawRisk)));
+          setLiveRiskPercentage(score);
+
+          // WHEN THE THRESHOLD OF RISK IS CROSSED (>= 75%), ALERT IS TRIGGERED!
+          if (score >= 75) {
+            triggerCriticalRiskAlert(score, data);
+          }
+        }
+        return;
+      }
+
+      // Standard KIOSK_ALERT_EVENT payload fallback
+      if (data.type === 'KIOSK_ALERT_EVENT' || Boolean(data.kiosk)) {
+        handleAlertEvent(data);
+      }
     },
     onError: () => {
-      // Backend WebSocket may be offline; application remains in standby simulation mode
+      // Backend WebSocket may be offline
     },
     onClose: () => {
-      console.log('[AlertContext] WebSocket closed.');
+      console.log('[AlertContext] Python WebSocket closed.');
     },
   });
 
@@ -205,7 +315,7 @@ export function AlertProvider({ children }) {
       activeAlert,
       alertHistory,
       dynamicKiosks,
-      wsStatus: wsConnectionStatus,
+      wsStatus: isWsConnected ? 'CONNECTED' : 'DISCONNECTED',
       isWsConnected,
       isMuted,
       triggerSimulatedAlert,
@@ -213,13 +323,17 @@ export function AlertProvider({ children }) {
       toggleMute,
       sendWsMessage,
       reconnectWs,
-      wsUrl: ENV.WS_ALERT_URL,
+      wsUrl: pythonAlertWsUrl,
+      // Direct Python socket telemetry values (same as Analytics)
+      liveRiskPercentage,
+      soilMoisture,
+      vibration,
+      telemetryTimestamp,
     }),
     [
       activeAlert,
       alertHistory,
       dynamicKiosks,
-      wsConnectionStatus,
       isWsConnected,
       isMuted,
       triggerSimulatedAlert,
@@ -227,6 +341,11 @@ export function AlertProvider({ children }) {
       toggleMute,
       sendWsMessage,
       reconnectWs,
+      pythonAlertWsUrl,
+      liveRiskPercentage,
+      soilMoisture,
+      vibration,
+      telemetryTimestamp,
     ]
   );
 

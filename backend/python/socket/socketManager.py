@@ -1,10 +1,21 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+import os
 import json
 from datetime import datetime
 import random
 import requests
+import threading
 
 router = APIRouter()
+
+def _dispatch_sms_fire_and_forget(url: str, timeout: float = 2.0):
+    """Dispatches SMS alert in a background daemon thread so the real-time stream is never blocked."""
+    if not url:
+        return
+    try:
+        requests.post(url, timeout=timeout)
+    except Exception as e:
+        print(f"[SMS ASYNC] Non-blocking dispatch notice: {e}")
 
 def tel(realsoil: float, vibration: float,riskPercentage: float):
     # Ensure vibration is float
@@ -170,13 +181,17 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                     "duration_ms": 2000,
                 }
                 print(f"🚨 [ALERT] Threshold breached! Soil value = {soil_value}")
-                # Pass JSON serialized strings or dicts according to manager signature
-                try:
-                    if(sms<=limit):
-                        requests.post("https://telesthetic-tridimensionally-margarete.ngrok-free.dev/sms/send-alert")
-                        sms+=1
-                except(e):
-                    pass
+                # Fire and forget POST in a separate daemon thread to prevent stalling the telemetry stream
+                if sms <= limit:
+                    sms += 1
+                    websocket.app.state.sms = sms
+                    sms_url = os.getenv("SMS_SERVICE_URL", "https://telesthetic-tridimensionally-margarete.ngrok-free.dev/sms/send-alert")
+                    threading.Thread(
+                        target=_dispatch_sms_fire_and_forget,
+                        args=(sms_url, 2.0),
+                        daemon=True,
+                    ).start()
+
                 if hasattr(manager, "broadcast_to_role"):
                     await manager.broadcast_to_role(json.dumps(alert_message), "ESP")
 

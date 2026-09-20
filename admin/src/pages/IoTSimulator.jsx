@@ -57,8 +57,8 @@ export default function IoTSimulator() {
     ]);
   }, []);
 
-  // Web Audio Synthesized Buzzer
-  const triggerBuzzer = useCallback((durationMs = 2000) => {
+  // Web Audio Synthesized Buzzer with urgent alarm modulation
+  const triggerBuzzer = useCallback((durationMs = 1500) => {
     if (!soundEnabled) return;
     try {
       if (!audioCtxRef.current) {
@@ -69,19 +69,24 @@ export default function IoTSimulator() {
       if (ctx.state === 'suspended') {
         ctx.resume();
       }
+      const now = ctx.currentTime;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + durationMs / 1000);
 
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + durationMs / 1000);
+      osc.type = 'sawtooth';
+      // Aggressive emergency modulation: 960Hz warbling to 520Hz
+      osc.frequency.setValueAtTime(960, now);
+      osc.frequency.linearRampToValueAtTime(520, now + (durationMs * 0.4) / 1000);
+      osc.frequency.linearRampToValueAtTime(960, now + (durationMs * 0.8) / 1000);
+      osc.frequency.linearRampToValueAtTime(440, now + durationMs / 1000);
+
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + durationMs / 1000);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + durationMs / 1000);
+      osc.start(now);
+      osc.stop(now + durationMs / 1000);
     } catch (e) {
       console.warn('Audio buzzer playback blocked or unavailable:', e);
     }
@@ -89,6 +94,30 @@ export default function IoTSimulator() {
 
   // Synchronized calculated risk percentage
   const riskPercent = calculateRiskScore(soilMoisture, vibration);
+
+  // Connection and Critical Status
+  const isSocketConnected = soilConnected || (soilWs.current && soilWs.current.readyState === WebSocket.OPEN);
+  const isCriticalRisk = riskPercent >= 75 || (networkSyncedRisk !== null && networkSyncedRisk >= 75);
+
+  // 🚨 Requirement 1: If IoT page is connected to socket and risk probability goes to critical, turn on buzzer immediately!
+  useEffect(() => {
+    if (isSocketConnected && isCriticalRisk) {
+      if (soundEnabled) {
+        // Turn on buzzer immediately!
+        triggerBuzzer(1500);
+        logMessage('alert', `🚨 CRITICAL RISK BREACH (${riskPercent}%) ON CONNECTED SOCKET! IMMEDIATE BUZZER ENGAGED!`);
+      }
+
+      // Continuous audible alert pulse every 1.8s while connected and in critical risk
+      const buzzerTimer = setInterval(() => {
+        if (soundEnabled && isSocketConnected && isCriticalRisk) {
+          triggerBuzzer(1200);
+        }
+      }, 1800);
+
+      return () => clearInterval(buzzerTimer);
+    }
+  }, [isSocketConnected, isCriticalRisk, soundEnabled, triggerBuzzer, riskPercent, logMessage]);
 
   // 1. Connect to /ws/front listener to confirm 100% telemetry sync with App and Analytics
   useEffect(() => {
@@ -417,7 +446,34 @@ export default function IoTSimulator() {
   const applyPreset = (moisture, vib) => {
     setSoilMoisture(moisture);
     setVibration(vib);
-    logMessage('system', `Applied Scenario: Moisture=${moisture} ADC, Vib=${vib}g`);
+    const calculatedPresetRisk = calculateRiskScore(moisture, vib);
+    logMessage('system', `Applied Scenario: Moisture=${moisture} ADC, Vib=${vib}g (Risk: ${calculatedPresetRisk}%)`);
+
+    // If soil socket is connected, transmit frame immediately
+    if (soilWs.current && soilWs.current.readyState === WebSocket.OPEN) {
+      let payloadString = '';
+      if (sendFormat === 'json') {
+        payloadString = JSON.stringify({
+          risk: Number(moisture),
+          vib: Number(parseFloat(vib).toFixed(2)),
+          riskPercentage: calculatedPresetRisk,
+          risk_percentage: calculatedPresetRisk,
+        });
+      } else {
+        payloadString = String(moisture);
+      }
+      try {
+        soilWs.current.send(payloadString);
+        logMessage('outgoing', `[SOIL TX (Preset Auto-Broadcast)]: ${payloadString}`);
+      } catch (err) {
+        logMessage('error', `Failed to send preset payload: ${err.message}`);
+      }
+    }
+
+    // If preset risk is critical and socket connected, turn on buzzer immediately!
+    if (calculatedPresetRisk >= 75 && (soilConnected || soilWs.current?.readyState === WebSocket.OPEN)) {
+      triggerBuzzer(1500);
+    }
   };
 
   const connectedCount = espNodes.filter((n) => n.connected).length;
@@ -465,6 +521,40 @@ export default function IoTSimulator() {
           </button>
         </div>
       </div>
+
+      {/* Critical Buzzer Active Warning Banner */}
+      {isSocketConnected && isCriticalRisk && (
+        <div className="w-full mb-4 p-3 bg-rose-950/80 border-2 border-rose-500 text-rose-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg animate-pulse shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🚨</span>
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
+                <span>CRITICAL GEOTECHNICAL THRESHOLD BREACH ({riskPercent}%)</span>
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white text-[9px] font-mono font-bold rounded">
+                  BUZZER SOUNDING
+                </span>
+              </div>
+              <div className="text-[10px] text-rose-300 font-mono mt-0.5">
+                Soil Socket Connected ({soilDeviceId}) • High landslide probability active. Immediate alarm pulses engaged.
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              onClick={() => triggerBuzzer(1500)}
+              className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black uppercase tracking-wider transition-colors active:scale-95"
+            >
+              Sound Now
+            </button>
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-black uppercase tracking-wider border border-slate-600 transition-colors"
+            >
+              {soundEnabled ? 'Mute Buzzer' : 'Unmute Buzzer'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Metric Quick Strip (Matches Website Uploads & Alerts Strip) */}
       <div className="flex flex-wrap items-center gap-3 mb-4 shrink-0">
@@ -618,7 +708,14 @@ export default function IoTSimulator() {
                   max="450"
                   step="1"
                   value={soilMoisture}
-                  onChange={(e) => setSoilMoisture(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setSoilMoisture(val);
+                    const currentRisk = calculateRiskScore(val, vibration);
+                    if (currentRisk >= 75 && isSocketConnected) {
+                      triggerBuzzer(1400);
+                    }
+                  }}
                   className="w-full h-1.5 bg-slate-800 rounded appearance-none cursor-pointer accent-[#d93850]"
                 />
               </div>
@@ -639,7 +736,14 @@ export default function IoTSimulator() {
                   max="1"
                   step="0.01"
                   value={vibration}
-                  onChange={(e) => setVibration(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setVibration(val);
+                    const currentRisk = calculateRiskScore(soilMoisture, val);
+                    if (currentRisk >= 75 && isSocketConnected) {
+                      triggerBuzzer(1400);
+                    }
+                  }}
                   className="w-full h-1.5 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400"
                 />
               </div>

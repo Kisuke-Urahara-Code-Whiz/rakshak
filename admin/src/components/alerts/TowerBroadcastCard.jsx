@@ -60,22 +60,23 @@ export default function TowerBroadcastCard({ activeAlert }) {
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center text-center">
-        {/* Tower Emitting Waves Visualization */}
-        <div className="relative w-48 h-48 flex items-center justify-center my-4">
-          <div className="tower-wave tower-wave-1"></div>
-          <div className="tower-wave tower-wave-2"></div>
-          <div className="tower-wave tower-wave-3"></div>
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center text-center">
+        <div className="my-auto w-full max-w-sm flex flex-col items-center">
+          {/* Tower Emitting Waves Visualization */}
+          <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center my-2 sm:my-3 shrink-0">
+            <div className="tower-wave tower-wave-1"></div>
+            <div className="tower-wave tower-wave-2"></div>
+            <div className="tower-wave tower-wave-3"></div>
 
-          <div className="relative z-10 w-20 h-20 rounded-full bg-[#d93850] text-white flex flex-col items-center justify-center shadow-xl border-4 border-white">
-            <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+            <div className="relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#d93850] text-white flex flex-col items-center justify-center shadow-xl border-4 border-white">
+              <svg className="w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
           </div>
-        </div>
 
-        {/* Tower Details */}
-        <div className="mt-2 w-full max-w-sm">
+          {/* Tower Details */}
+          <div className="w-full">
           <div className="text-xs font-mono font-bold text-[#64748b] tracking-wider">{alertId}</div>
           <h2 className="text-lg font-black uppercase text-[#0f172a] mt-0.5">{activeAlert.name}</h2>
           <p className="text-xs font-bold text-[#d93850] uppercase mt-0.5">{activeAlert.adm5 || `${activeAlert.district}, ${activeAlert.state}`}</p>
@@ -129,5 +130,6 @@ export default function TowerBroadcastCard({ activeAlert }) {
         </div>
       </div>
     </div>
+  </div>
   );
 }

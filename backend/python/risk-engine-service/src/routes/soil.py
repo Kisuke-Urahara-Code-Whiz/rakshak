@@ -11,7 +11,19 @@ from ..schemas import AlertRequest, SensorReading
 from ..services import process_alert
 
 router = APIRouter()
+import threading
 _LAST_SMS_ALERT_TIME = 0.0
+
+def _dispatch_soil_sms_async(url: str):
+    try:
+        res2 = requests.post(url, timeout=2.0)
+        if res2.status_code == 200:
+            state.counter += 1
+            print(f"[THRESHOLD ALERT Triggered]: {res2.status_code} {res2.text}")
+        else:
+            print(f"[THRESHOLD ALERT Status/Rate-Limit]: {res2.status_code} {res2.text}")
+    except Exception as ex:
+        print(f"[THRESHOLD ALERT Non-blocking error]: {ex}")
 
 
 @router.post("/api/soil/bulk")
@@ -45,13 +57,8 @@ async def receive_hardware_data(payload: List[SensorReading]):
                 now = time.time()
                 if now - _LAST_SMS_ALERT_TIME >= 60.0:
                     sms_url = get_service_url(settings.SMS_SERVICE_NAME, "/send-alert")
-                    res2 = requests.post(sms_url)
                     _LAST_SMS_ALERT_TIME = now
-                    if res2.status_code == 200:
-                        state.counter += 1
-                        print(f"[THRESHOLD ALERT Triggered]: {res2.status_code} {res2.text}")
-                    else:
-                        print(f"[THRESHOLD ALERT Status/Rate-Limit]: {res2.status_code} {res2.text}")
+                    threading.Thread(target=_dispatch_soil_sms_async, args=(sms_url,), daemon=True).start()
                 try:
                     res = await process_alert(AlertRequest(device_id="device_1", duration_ms=500))
                     print(f"[WAN ALERT SENT]: {res}")

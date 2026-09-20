@@ -4,8 +4,8 @@
  */
 
 export const ENV = {
-  // WebSocket URL for live kiosk & hazard alerts (room-service raw WebSocket)
-  WS_ALERT_URL: import.meta.env.VITE_WS_ALERT_URL || 'ws://localhost:5004/ws/alerts',
+  // WebSocket URL for live risk & alerts (Port 8000 Python WebSocket server)
+  WS_ALERT_URL: import.meta.env.VITE_WS_ALERT_URL || `${import.meta.env.VITE_PYTHON_WS_URL || 'ws://localhost:8000'}/ws/front/front_alerts`,
 
   // Backend REST API Base URL for incident uploads, auth, and reports (Spring Cloud Gateway)
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
