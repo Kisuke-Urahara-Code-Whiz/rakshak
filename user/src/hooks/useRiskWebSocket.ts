@@ -1,4 +1,4 @@
-import { WS_BASE_URL } from '@/configs/env';
+import { PYTHON_WS_HOST, PYTHON_WS_URL, WS_BASE_URL } from '@/configs/env';
 import { useAppStore } from '@/stores/useAppStore';
 import { escalateOfficialAlert } from '@/services/telemetryApi';
 import { Client } from '@stomp/stompjs';
@@ -11,15 +11,13 @@ const RISK_TOPIC = '/topic/risk';
 // Extract python server host for direct python socket connection
 function getPythonSocketUrl(clientId: string): string {
   try {
-    let host = 'localhost:8000';
-    if (WS_BASE_URL) {
-      const match = WS_BASE_URL.match(/wss?:\/\/([^/:]+)/);
-      if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
-        host = `${match[1]}:8000`;
-      }
+    let host = PYTHON_WS_HOST || 'localhost:8000';
+    if (Platform.OS === 'android' && (host.startsWith('localhost') || host.startsWith('127.0.0.1'))) {
+      host = host.replace(/^(localhost|127\.0\.0\.1)/, '10.0.2.2');
     }
-    if (Platform.OS === 'android' && host.startsWith('localhost')) {
-      host = '10.0.2.2:8000';
+    // If a full custom URL without localhost was explicitly defined in env
+    if (PYTHON_WS_URL && !PYTHON_WS_URL.includes('localhost') && !PYTHON_WS_URL.includes('127.0.0.1')) {
+      return `${PYTHON_WS_URL.replace(/\/+$/, '')}/ws/front/${clientId}`;
     }
     return `ws://${host}/ws/front/${clientId}`;
   } catch {

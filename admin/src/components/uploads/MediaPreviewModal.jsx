@@ -96,7 +96,18 @@ export default function MediaPreviewModal({ upload, onClose }) {
     }
   };
 
-  const q = upload.groundQuestionnaire || {};
+  const q =
+    upload.groundQuestionnaire && typeof upload.groundQuestionnaire === 'object'
+      ? upload.groundQuestionnaire
+      : typeof upload.questionnaire === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(upload.questionnaire);
+          } catch {
+            return {};
+          }
+        })()
+      : upload.questionnaire || upload.payload?.questionnaire || {};
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">

@@ -20,12 +20,7 @@ build_service() {
     echo "✓ $name built successfully"
 }
 
-build_service "DISCOVERY-SERVICE" "../java/discovery-service"
-build_service "GATEWAY-SERVICE" "../java/gateway-service"
-build_service "MEDIA-SERVICE" "../java/media-service"
-build_service "SQL-SERVICE" "../java/sql-service"
 build_service "SMS-SERVICE" "../java/sms-service"
-build_service "ROOM-SERVICE" "../java/room-service"
 
 echo
 echo "========================================"

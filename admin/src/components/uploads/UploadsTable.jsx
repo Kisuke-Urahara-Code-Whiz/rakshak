@@ -4,6 +4,7 @@ export default function UploadsTable({
   uploads,
   userRole = 'Citizen',
   onViewMedia,
+  onViewQuestionnaire,
   onInspectPayload,
   onEscalateAlert,
 }) {
@@ -30,7 +31,6 @@ export default function UploadsTable({
               <th className="p-3.5">Reporter Phone Number</th>
               <th className="p-3.5">Upload Type & Format</th>
               <th className="p-3.5">Locality & Coordinates</th>
-              <th className="p-3.5">Ground Triage Risk</th>
               <th className="p-3.5">Logged Timestamp</th>
               <th className="p-3.5 text-center">Action / View</th>
             </tr>
@@ -38,7 +38,7 @@ export default function UploadsTable({
           <tbody className="divide-y divide-[#e2e8f0] text-xs font-bold text-[#333333]">
             {uploads.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-12 text-center text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                <td colSpan={5} className="p-12 text-center text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
                   No incident media submissions found. Click "Submit Incident Report" to add one.
                 </td>
               </tr>
@@ -109,24 +109,6 @@ export default function UploadsTable({
                       </div>
                     </td>
 
-                    {/* Ground Triage Risk & Questionnaire Result */}
-                    <td className="p-3.5">
-                      <span
-                        className={`inline-block px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                          item.severity === 'High'
-                            ? 'bg-red-600 text-white'
-                            : item.severity === 'Medium'
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-emerald-600 text-white'
-                        }`}
-                      >
-                        {item.severity} Risk
-                      </span>
-                      <div className="text-[10px] font-bold text-slate-600 mt-1 max-w-[220px] truncate" title={item.groundQuestionnaire?.activityStatus}>
-                        {item.groundQuestionnaire?.activityStatus || 'Ground verified'}
-                      </div>
-                    </td>
-
                     {/* Logged Timestamp */}
                     <td className="p-3.5">
                       <div className="text-slate-900 font-bold">{item.relativeTime}</div>
@@ -135,71 +117,92 @@ export default function UploadsTable({
                       </div>
                     </td>
 
-                    {/* Action / View or Listen Dropdown */}
+                    {/* Action / View / Questionnaire */}
                     <td className="p-3.5 text-center relative">
-                      <div className="inline-block text-left">
+                      <div className="flex items-center justify-center gap-2">
+                        {/* 1-Click Questionnaire Action */}
                         <button
                           type="button"
-                          onClick={() => setOpenDropdownId(isDropdownOpen ? null : item.id)}
-                          className="bg-white hover:bg-slate-50 border-2 border-slate-300 text-slate-800 px-3 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all focus:border-[#d93850]"
+                          onClick={() => {
+                            if (onViewQuestionnaire) onViewQuestionnaire(item);
+                            else onViewMedia(item);
+                          }}
+                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 px-2.5 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0"
+                          title="View 5-Point Ground Questionnaire"
                         >
-                          <span>{isAudio ? '🎧 Listen' : '👁️ View'}</span>
-                          <span className="text-[10px]">▼</span>
+                          <span>📋</span>
+                          <span>Questionnaire</span>
                         </button>
 
-                        {/* Dropdown Menu */}
-                        {isDropdownOpen && (
-                          <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-[#cbd5e1] shadow-xl z-30 divide-y divide-slate-100 text-left">
-                            {/* Primary Action: View or Listen */}
-                            <button
-                              onClick={() => {
-                                setOpenDropdownId(null);
-                                onViewMedia(item);
-                              }}
-                              className="w-full px-3 py-2.5 text-xs font-bold text-slate-800 hover:bg-red-50 hover:text-[#d93850] flex items-center gap-2 transition-colors"
-                            >
-                              <span>{isAudio ? '🎙️ Listen to Audio (.m4a)' : '📷 View High-Res Photo (.jpeg)'}</span>
-                            </button>
+                        {/* Media Preview Dropdown */}
+                        <div className="relative inline-block text-left">
+                          <button
+                            type="button"
+                            onClick={() => setOpenDropdownId(isDropdownOpen ? null : item.id)}
+                            className="bg-white hover:bg-slate-50 border-2 border-slate-300 text-slate-800 px-2.5 py-1.5 text-xs font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all focus:border-[#d93850]"
+                          >
+                            <span>{isAudio ? '🎧 Listen' : '👁️ View'}</span>
+                            <span className="text-[10px]">▼</span>
+                          </button>
 
-                            {/* View Questionnaire */}
-                            <button
-                              onClick={() => {
-                                setOpenDropdownId(null);
-                                onViewMedia(item);
-                              }}
-                              className="w-full px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
-                            >
-                              <span>📋 View Ground Questionnaire</span>
-                            </button>
+                          {/* Dropdown Menu */}
+                          {isDropdownOpen && (
+                            <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-[#cbd5e1] shadow-xl z-30 divide-y divide-slate-100 text-left">
+                              {/* Primary Action: View or Listen */}
+                              <button
+                                onClick={() => {
+                                  setOpenDropdownId(null);
+                                  onViewMedia(item);
+                                }}
+                                className="w-full px-3 py-2.5 text-xs font-bold text-slate-800 hover:bg-red-50 hover:text-[#d93850] flex items-center gap-2 transition-colors"
+                              >
+                                <span>{isAudio ? '🎙️ Listen to Audio (.m4a)' : '📷 View High-Res Photo (.jpeg)'}</span>
+                              </button>
 
-                            {/* Role Rule: Official actions for Admins and Employees */}
-                            {userRole !== 'Citizen' && (
-                              <>
-                                {/* Inspect Payload */}
-                                <button
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    onInspectPayload(item.payload || item);
-                                  }}
-                                  className="w-full px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
-                                >
-                                  <span>🔍 Inspect JSON Payload</span>
-                                </button>
+                              {/* View Questionnaire */}
+                              <button
+                                onClick={() => {
+                                  setOpenDropdownId(null);
+                                  if (onViewQuestionnaire) {
+                                    onViewQuestionnaire(item);
+                                  } else {
+                                    onViewMedia(item);
+                                  }
+                                }}
+                                className="w-full px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                              >
+                                <span>📋 View Ground Questionnaire</span>
+                              </button>
 
-                                {/* Escalate to Live Kiosk Alert */}
-                                <button
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    onEscalateAlert(item);
-                                  }}
-                                  className="w-full px-3 py-2 text-xs font-black text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-                                >
-                                  <span>🚨 Escalate to Live Alert</span>
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
+                              {/* Role Rule: Official actions for Admins and Employees */}
+                              {userRole !== 'Citizen' && (
+                                <>
+                                  {/* Inspect Payload */}
+                                  <button
+                                    onClick={() => {
+                                      setOpenDropdownId(null);
+                                      onInspectPayload(item.payload || item);
+                                    }}
+                                    className="w-full px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                                  >
+                                    <span>🔍 Inspect JSON Payload</span>
+                                  </button>
+
+                                  {/* Escalate to Live Kiosk Alert */}
+                                  <button
+                                    onClick={() => {
+                                      setOpenDropdownId(null);
+                                      onEscalateAlert(item);
+                                    }}
+                                    className="w-full px-3 py-2 text-xs font-black text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                                  >
+                                    <span>🚨 Escalate to Live Alert</span>
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>

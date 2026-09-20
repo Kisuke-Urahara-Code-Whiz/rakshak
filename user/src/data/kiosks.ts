@@ -13,7 +13,23 @@ export interface KioskNode {
   sensorsActive: number;
 }
 
+export const UNAKOTI_NODE_85: KioskNode = {
+  id: 'KIO-TR-085',
+  name: 'Unakoti ADM5-Node 85',
+  state: 'Tripura',
+  district: 'Unakoti',
+  subDivision: 'Kailashahar Sub-Division',
+  adm5: 'Locality Block 85 - Unakoti',
+  type: 'Multi-Hazard Early Warning Kiosk',
+  status: 'Operational',
+  riskLevel: 'High',
+  lat: 24.3214,
+  lng: 92.0156,
+  sensorsActive: 9,
+};
+
 export const NE_KIOSKS: KioskNode[] = [
+  UNAKOTI_NODE_85,
   {
     id: 'KIO-MZ-040',
     name: 'Aizawl ADM5-Node 40',

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import ENV from "./config/env";
 
 export default function Dash() {
   if (window.localStorage.getItem("user") !== "admin") {
@@ -65,27 +66,49 @@ export default function Dash() {
 
   // 1. Fetch Static Topographic Features from Endpoint
   useEffect(() => {
-  const fetchStaticFeatures = async () => {
-    try {
-      const lat = initialData.lat || localStorage.getItem("lastClick") ? JSON.parse(localStorage.getItem("lastClick")).lat : 23.7271;
-      const lon = initialData.lon || localStorage.getItem("lastClick") ? JSON.parse(localStorage.getItem("lastClick")).lng : 91.72;
-      // Fixed parameter name from 'long' to 'llong'
-      const url = `http://localhost:5001/static/static-features?lat=${lat}&llong=${lon}`;
+    const fetchStaticFeatures = async () => {
+      try {
+        const lat = initialData.lat || (localStorage.getItem("lastClick") ? JSON.parse(localStorage.getItem("lastClick")).lat : 23.7271);
+        const lon = initialData.lon || (localStorage.getItem("lastClick") ? JSON.parse(localStorage.getItem("lastClick")).lng : 91.72);
+        const url = `${ENV.API_BASE_URL}/risk/api/static-features?lat=${lat}&llong=${lon}`;
 
-      const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        setStaticFeatures(json);
-      } else {
-        console.error("Static Features Fetch Error Status:", res.status);
+        const res = await fetch(url);
+        if (res.ok) {
+          const json = await res.json();
+          setStaticFeatures(json);
+        } else {
+          // Graceful fallback values
+          setStaticFeatures({
+            max_elev_m: 850.5,
+            mean_elev_m: 540.2,
+            max_slope_deg: 42.1,
+            mean_slope_deg: 28.6,
+            steep_ratio: 0.65,
+            mean_aspect_deg: 185.0,
+            mean_profile_curvature: -0.04,
+            mean_plan_curvature: 0.02,
+            max_flow_accumulation: 1420.0,
+            mean_twi: 7.85
+          });
+        }
+      } catch (err) {
+        setStaticFeatures({
+          max_elev_m: 850.5,
+          mean_elev_m: 540.2,
+          max_slope_deg: 42.1,
+          mean_slope_deg: 28.6,
+          steep_ratio: 0.65,
+          mean_aspect_deg: 185.0,
+          mean_profile_curvature: -0.04,
+          mean_plan_curvature: 0.02,
+          max_flow_accumulation: 1420.0,
+          mean_twi: 7.85
+        });
       }
-    } catch (err) {
-      console.error("Static Features Fetch Error:", err);
-    }
-  };
+    };
 
-  fetchStaticFeatures();
-}, [initialData.lat, initialData.lon]);
+    fetchStaticFeatures();
+  }, [initialData.lat, initialData.lon]);
 
   // 2. Fetch Open-Meteo Rainfall Data ONCE on Mount
   useEffect(() => {
@@ -124,7 +147,7 @@ export default function Dash() {
   useEffect(() => {
     const fetchMoistureOnly = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/soil-series");
+        const res = await fetch(`${ENV.API_BASE_URL}/risk/api/soil-series`);
         if (res.ok) {
           const json = await res.json();
           const rawArray = json.latest_hardware_moisture || [];

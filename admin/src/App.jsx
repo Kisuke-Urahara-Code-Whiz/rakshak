@@ -24,13 +24,12 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/model-comparison" element={<Navigate to="/app/model-comparison" replace />} />
-            <Route path="/analytics" element={<Navigate to="/app/analytics" replace />} />
             <Route path="/app" element={<DashboardLayout />}>
               <Route path="risk-map" element={<RiskMap />} />
               <Route path="about" element={<About />} />
               <Route path="stations" element={<Stations />} />
               <Route path="alerts" element={<Alerts />} />
-              <Route path="reports" element={<Reports />} />
+              <Route path="reports" element={<Navigate to="/app/risk-map" replace />} />
               <Route path="uploads" element={<Uploads />} />
               <Route path="model-comparison" element={<ModelComparison />} />
               <Route path="analytics" element={<Analytics />} />

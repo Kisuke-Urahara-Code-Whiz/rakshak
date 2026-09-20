@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '@/configs/env';
 import axios from 'axios';
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export function getFormattedDateTime() {
   const now = new Date();
@@ -37,13 +38,15 @@ export function getMimeType(extension: string): string {
     case 'MP4':
       return 'video/mp4';
     case 'M4A':
-      return 'audio/m4a';
+      return 'audio/mp4';
     case 'AAC':
       return 'audio/aac';
     case 'MP3':
       return 'audio/mpeg';
     case 'WAV':
       return 'audio/wav';
+    case 'WEBM':
+      return 'audio/webm';
     default:
       return 'application/octet-stream';
   }
@@ -115,38 +118,69 @@ export async function updateCitizenLanguage(
 }
 
 
+
 export async function uploadMediaEvidence(
   fileUri: string,
   phoneNumber: string,
   fileType: string,
-  coords: { latitude: number; longitude: number }
+  coords: { latitude: number; longitude: number },
+  questionnaire?: any
 ) {
   const { date, time } = getFormattedDateTime();
   const mimeType = getMimeType(fileType);
   const normalizedExt = fileType.toLowerCase();
   const fileName = `upload_${Date.now()}.${normalizedExt}`;
 
-  const normalizedUri =
-    Platform.OS === 'ios' ? fileUri.replace('file://', '') : fileUri;
+  // Native Android & iOS: Use native FileSystem.uploadAsync to bypass React Native's FormData bug
+  if (Platform.OS !== 'web') {
+    console.log(API_BASE_URL, 'Uploading media evidence (Native FileSystem):', fileName, 'Type:', mimeType, 'URI:', fileUri);
 
-  const formData = new FormData();
+    const qStr = questionnaire
+      ? typeof questionnaire === 'string'
+        ? questionnaire
+        : JSON.stringify(questionnaire)
+      : undefined;
 
-  if (Platform.OS === 'web') {
-    try {
-      const res = await fetch(fileUri);
-      const blob = await res.blob();
-      formData.append('file', blob, fileName);
-    } catch (fetchErr) {
-      console.warn('Web blob fetch fallback:', fetchErr);
-      formData.append('file', {
-        uri: normalizedUri,
-        type: mimeType,
-        name: fileName,
-      } as any);
+    const uploadResult = await FileSystem.uploadAsync(
+      `${API_BASE_URL}/media/upload`,
+      fileUri,
+      {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: mimeType,
+        parameters: {
+          number: String(phoneNumber),
+          fileType: fileType,
+          date: date,
+          time: time,
+          lat: String(coords.latitude),
+          lon: String(coords.longitude),
+          ...(qStr ? { questionnaire: qStr } : {}),
+        },
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+      }
+    );
+
+    if (uploadResult.status < 200 || uploadResult.status >= 300) {
+      throw new Error(`Upload failed with status ${uploadResult.status}: ${uploadResult.body || 'Server error'}`);
     }
-  } else {
+
+    return { status: uploadResult.status, ok: true };
+  }
+
+  // Web environment: Standard browser FormData + Blob
+  const formData = new FormData();
+  try {
+    const res = await fetch(fileUri);
+    const blob = await res.blob();
+    formData.append('file', blob, fileName);
+  } catch (fetchErr) {
+    console.warn('Web blob fetch fallback:', fetchErr);
     formData.append('file', {
-      uri: normalizedUri,
+      uri: fileUri,
       type: mimeType,
       name: fileName,
     } as any);
@@ -158,15 +192,29 @@ export async function uploadMediaEvidence(
   formData.append('time', time);
   formData.append('lat', String(coords.latitude));
   formData.append('lon', String(coords.longitude));
+  if (questionnaire) {
+    formData.append(
+      'questionnaire',
+      typeof questionnaire === 'string' ? questionnaire : JSON.stringify(questionnaire)
+    );
+  }
 
-  console.log(API_BASE_URL, 'Uploading media evidence with formData:', formData);
-  return axios.post(`${API_BASE_URL}/media/upload`, formData, {
+  console.log(API_BASE_URL, 'Uploading media evidence (Web FormData):', fileName, 'Type:', mimeType);
+
+  const res = await fetch(`${API_BASE_URL}/media/upload`, {
+    method: 'POST',
     headers: {
-      'Content-Type': 'multipart/form-data',
       'ngrok-skip-browser-warning': 'true',
     },
-    transformRequest: (data) => data, 
+    body: formData,
   });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    throw new Error(`Upload failed with status ${res.status}: ${errorText || res.statusText}`);
+  }
+
+  return { status: res.status, ok: res.ok };
 }
 
 export async function escalateOfficialAlert(payload: {

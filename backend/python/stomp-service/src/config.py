@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     EUREKA_PORT: int = 5000
 
     APP_NAME: str = "stomp-service"
-    SERVER_PORT: int = 8002
+    SERVER_PORT: int = 5008
     HEARTBEAT_INTERVAL_SECS: int = 30
 
     ROOM_SERVICE_NAME: str = "room-service"

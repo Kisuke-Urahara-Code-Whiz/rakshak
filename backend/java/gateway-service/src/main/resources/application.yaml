@@ -74,13 +74,6 @@ spring:
               filters:
                 - StripPrefix=1
 
-            - id: static-loader-service
-              uri: lb://STATIC-LOADER-SERVICE
-              predicates:
-                - Path=/static/**
-              filters:
-                - StripPrefix=1
-
 eureka:
   client:
     fetch-registry: true

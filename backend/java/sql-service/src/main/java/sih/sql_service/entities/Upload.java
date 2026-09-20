@@ -45,4 +45,7 @@ public class Upload {
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
+    @Column(name = "questionnaire", columnDefinition = "TEXT")
+    private String questionnaire;
+
 }

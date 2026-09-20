@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Map, { Layer, Source } from "react-map-gl/maplibre";
 import * as turf from "@turf/turf";
 import "maplibre-gl/dist/maplibre-gl.css";
+import ENV from "./config/env";
 
 const NORTHEAST_STATES = [
   { name: "Arunachal Pradesh", file: "arunachal-pradesh.geojson" },
@@ -80,7 +81,7 @@ export default function MapView() {
   useEffect(() => {
     const fetchLiveData = async () => {
       try {
-        const res = await fetch("http://localhost:5001/risk/api/live-data");
+        const res = await fetch(`${ENV.API_BASE_URL}/risk/api/live-data`);
         if (res.ok) setRiskData(await res.json());
       } catch (err) { console.error("Polling error:", err); }
     };

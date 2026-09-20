@@ -4,20 +4,13 @@ import UploadsTable from '../components/uploads/UploadsTable';
 import MediaPreviewModal from '../components/uploads/MediaPreviewModal';
 import PayloadInspectorModal from '../components/uploads/PayloadInspectorModal';
 import NewUploadModal from '../components/uploads/NewUploadModal';
+import QuestionnaireViewModal from '../components/uploads/QuestionnaireViewModal';
 import { SAMPLE_UPLOADS } from '../data/sampleUploads';
 import { useLanguage } from '../context/LanguageContext';
 import ENV from '../config/env';
 
 export default function Uploads() {
   const { t } = useLanguage();
-  const [uploads, setUploads] = useState(SAMPLE_UPLOADS);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all'); // 'all' | 'photo' | 'audio'
-
-  // Modals
-  const [previewItem, setPreviewItem] = useState(null);
-  const [inspectPayload, setInspectPayload] = useState(null);
-  const [isNewUploadOpen, setIsNewUploadOpen] = useState(false);
 
   // Role info & session
   const userRole = window.localStorage.getItem('userRole') || 'MDoNER Employee';
@@ -28,6 +21,17 @@ export default function Uploads() {
     citizenNumber = session.identifier || window.localStorage.getItem('phoneNumber');
   } catch {}
   const cleanCitizenPhone = citizenNumber ? citizenNumber.replace(/\D/g, '').slice(-10) : null;
+
+  // Initial state: empty for citizens so no mock data leaks, SAMPLE_UPLOADS for officials
+  const [uploads, setUploads] = useState(isCitizen ? [] : SAMPLE_UPLOADS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all'); // 'all' | 'photo' | 'audio'
+
+  // Modals
+  const [previewItem, setPreviewItem] = useState(null);
+  const [questionnaireItem, setQuestionnaireItem] = useState(null);
+  const [inspectPayload, setInspectPayload] = useState(null);
+  const [isNewUploadOpen, setIsNewUploadOpen] = useState(false);
 
   // Fetch real uploads from Java backend on mount & real-time live sync
   useEffect(() => {
@@ -48,16 +52,19 @@ export default function Uploads() {
             }));
 
             setUploads((prev) => {
-              const filtered = isCitizen && cleanCitizenPhone
-                ? enrichedBackend.filter((b) => b.phoneNumber?.replace(/\D/g, '').endsWith(cleanCitizenPhone))
-                : enrichedBackend;
+              if (isCitizen) {
+                // Strictly return only citizen's own uploads
+                return cleanCitizenPhone
+                  ? enrichedBackend.filter((b) => b.phoneNumber?.replace(/\D/g, '').endsWith(cleanCitizenPhone))
+                  : enrichedBackend;
+              }
 
-              const backendIds = new Set(filtered.map((b) => b.id));
-              // Retain non-colliding mock samples, but place live citizen uploads at top
+              const backendIds = new Set(enrichedBackend.map((b) => b.id));
+              // Retain non-colliding mock samples for officials, placing live uploads on top
               const remainingSamples = prev.filter(
                 (item) => !backendIds.has(item.id) && !item.id?.startsWith('UPL-MB-')
               );
-              return [...filtered, ...remainingSamples];
+              return [...enrichedBackend, ...remainingSamples];
             });
           }
         }
@@ -241,9 +248,22 @@ export default function Uploads() {
         uploads={filteredUploads}
         userRole={userRole}
         onViewMedia={(item) => setPreviewItem(item)}
+        onViewQuestionnaire={(item) => setQuestionnaireItem(item)}
         onInspectPayload={(payload) => setInspectPayload(payload)}
         onEscalateAlert={handleEscalateAlert}
       />
+
+      {/* 5-Point Ground Questionnaire View Modal */}
+      {questionnaireItem && (
+        <QuestionnaireViewModal
+          upload={questionnaireItem}
+          onClose={() => setQuestionnaireItem(null)}
+          onViewMedia={(item) => {
+            setQuestionnaireItem(null);
+            setPreviewItem(item);
+          }}
+        />
+      )}
 
       {/* Media Preview Modal (JPEG Photo Lightbox / M4A Audio Player) */}
       {previewItem && (

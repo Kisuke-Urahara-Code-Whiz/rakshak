@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ENV from "./config/env";
 
 export default function Login({ onLogin }) {
   const [employeeUid, setEmployeeUid] = useState("");
@@ -20,7 +21,7 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/send-otp", {
+      const res = await fetch(`${ENV.API_BASE_URL}/risk/api/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ employee_uid: employeeUid }),

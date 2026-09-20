@@ -25,4 +25,5 @@ public class FileUploadRequestDto {
     private LocalTime time;
 
     private MultipartFile file;
+    private String questionnaire;
 }

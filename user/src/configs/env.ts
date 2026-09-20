@@ -21,9 +21,34 @@ const LOCAL_GATEWAY = lanHost
 
 export const CLOUD_API_URL = `https://${NGROK_HOST}`;
 
-export const API_BASE_URL = 'https://telesthetic-tridimensionally-margarete.ngrok-free.dev'
+const configuredApiUrl =
+  Constants.expoConfig?.extra?.apiBaseUrl ||
+  process.env.EXPO_PUBLIC_API_BASE_URL;
 
-export const WS_BASE_URL =
-  Constants.expoConfig?.extra?.wsUrl ??
-  (Platform.OS === 'web' ? 'ws://localhost:5001' : `ws://${LOCAL_GATEWAY}`);
+export const API_BASE_URL: string =
+  configuredApiUrl ||
+  (NGROK_HOST ? `https://${NGROK_HOST}` : `http://${LOCAL_GATEWAY}`);
+
+const configuredWsUrl =
+  Constants.expoConfig?.extra?.wsUrl ||
+  process.env.EXPO_PUBLIC_WS_URL;
+
+export const WS_BASE_URL: string =
+  configuredWsUrl ||
+  (Platform.OS === 'web'
+    ? 'ws://localhost:5001'
+    : NGROK_HOST
+    ? `wss://${NGROK_HOST}`
+    : `ws://${LOCAL_GATEWAY}`);
+
+export const PYTHON_WS_HOST: string =
+  Constants.expoConfig?.extra?.pythonWsHost ||
+  process.env.EXPO_PUBLIC_PYTHON_WS_HOST ||
+  'localhost:8000';
+
+export const PYTHON_WS_URL: string =
+  Constants.expoConfig?.extra?.pythonWsUrl ||
+  process.env.EXPO_PUBLIC_PYTHON_WS_URL ||
+  `ws://${PYTHON_WS_HOST}`;
+
 

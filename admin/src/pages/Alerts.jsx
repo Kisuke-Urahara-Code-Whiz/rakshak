@@ -20,8 +20,49 @@ const NE_ALERT_TARGETS = [
 export default function Alerts() {
   const { activeAlert, dismissAlert, triggerSimulatedAlert, wsUrl, wsStatus, isWsConnected } = useAlert();
   const { t } = useLanguage();
-  const [selectedTarget, setSelectedTarget] = useState(NE_ALERT_TARGETS[0]);
+
+  // Role info & session
+  const userRole = window.localStorage.getItem('userRole') || 'MDoNER Employee';
+  const sessionRaw = window.localStorage.getItem('userSession');
+  const session = sessionRaw ? JSON.parse(sessionRaw) : null;
+  const isZonal = userRole === 'Zonal Admin';
+  const isDistrict = userRole === 'District Admin';
+  const isMdoner = userRole === 'MDoNER Employee';
+
+  // Determine officer assigned zone/district
+  const assignedState = session?.state || 'Sikkim';
+  const assignedDistrict = session?.district || 'North Sikkim';
+
+  // Zone-specific target filtering
+  const officerTargets = isMdoner
+    ? NE_ALERT_TARGETS
+    : isDistrict
+    ? NE_ALERT_TARGETS.filter((t) => t.district.toLowerCase() === assignedDistrict.toLowerCase() || t.state.toLowerCase() === assignedState.toLowerCase())
+    : NE_ALERT_TARGETS.filter((t) => t.state.toLowerCase() === assignedState.toLowerCase());
+
+  const validTargets = officerTargets.length > 0 ? officerTargets : NE_ALERT_TARGETS;
+
+  const [selectedTarget, setSelectedTarget] = useState(validTargets[0]);
   const [isDispatching, setIsDispatching] = useState(false);
+
+  // Active Alert Zone Matching: Zonal Admin & District Officer only get alerts for their specific zone!
+  const alertMatchesOfficerZone = () => {
+    if (!activeAlert) return false;
+    if (isMdoner) return true; // MDoNER can see and triage all alerts
+
+    const alertDistrict = (activeAlert.district || activeAlert.kiosk?.district || '').toLowerCase();
+    const alertState = (activeAlert.state || activeAlert.kiosk?.state || '').toLowerCase();
+
+    if (isDistrict) {
+      return alertDistrict.includes(assignedDistrict.toLowerCase()) || alertState.includes(assignedState.toLowerCase());
+    }
+    if (isZonal) {
+      return alertState.includes(assignedState.toLowerCase());
+    }
+    return false;
+  };
+
+  const displayedAlert = alertMatchesOfficerZone() ? activeAlert : null;
 
   const totalSmsCount = 1420;
 
@@ -32,10 +73,10 @@ export default function Alerts() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          employeeId: 'EMP-NER-001',
-          role: 'MDoNER Employee',
-          userName: 'Central Command',
-          department: 'NER Disaster Risk Cell',
+          employeeId: session?.identifier || (isMdoner ? 'EMP-NER-001' : isZonal ? 'ZONAL-SK-01' : 'DIST-SK-NORTH'),
+          role: userRole,
+          userName: session?.name || `${userRole} Command`,
+          department: session?.department || `${target.state} Disaster Cell`,
           district: target.district,
           state: target.state,
           latitude: target.lat,
@@ -91,7 +132,7 @@ export default function Alerts() {
               }}
               className="text-xs font-bold text-slate-800 bg-transparent border-none focus:outline-none cursor-pointer"
             >
-              {NE_ALERT_TARGETS.map((t) => (
+              {validTargets.map((t) => (
                 <option key={t.kioskId} value={t.kioskId}>
                   {t.label}
                 </option>
@@ -111,9 +152,9 @@ export default function Alerts() {
           <Link
             to="/app/analytics"
             onClick={() => {
-              const targetLat = activeAlert?.lat || selectedTarget.lat;
-              const targetLng = activeAlert?.lng || selectedTarget.lng;
-              const name = activeAlert?.name || selectedTarget.label;
+              const targetLat = displayedAlert?.lat || selectedTarget.lat;
+              const targetLng = displayedAlert?.lng || selectedTarget.lng;
+              const name = displayedAlert?.name || selectedTarget.label;
               localStorage.setItem('latitude', String(targetLat));
               localStorage.setItem('longitude', String(targetLng));
               localStorage.setItem('towerName', name);
@@ -124,7 +165,7 @@ export default function Alerts() {
             <span>Go to Analytics</span>
           </Link>
 
-          {activeAlert && (
+          {displayedAlert && (
             <button
               onClick={dismissAlert}
               className="bg-[#333333] hover:bg-[#1a1a1a] text-white px-3 py-1.5 font-black text-xs uppercase tracking-wider transition-colors"
@@ -135,10 +176,10 @@ export default function Alerts() {
         </div>
       </PageHeader>
 
-      {/* Display alert ONLY when an active WebSocket payload is received */}
-      {activeAlert ? (
+      {/* Display alert ONLY when an active WebSocket payload for the officer's zone is received */}
+      {displayedAlert ? (
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5 overflow-hidden">
-          <TowerBroadcastCard activeAlert={activeAlert} />
+          <TowerBroadcastCard activeAlert={displayedAlert} />
           <SmsDispatchLog recipients={EMERGENCY_RECIPIENTS} totalSmsCount={totalSmsCount} />
         </div>
       ) : (

@@ -12,6 +12,7 @@ import {
   Filler,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
+import ENV from './config/env';
 
 // Register ChartJS components
 ChartJS.register(
@@ -195,7 +196,8 @@ export default function Analytics() {
   // 3. WebSocket Listener
   useEffect(() => {
     const clientId = 'front_1';
-    const wsUrl = `ws://localhost:8000/ws/front/${clientId}`;
+    const pythonWs = (ENV.PYTHON_WS_URL || 'ws://localhost:8000').replace(/\/+$/, '');
+    const wsUrl = `${pythonWs}/ws/front/${clientId}`;
     let socket;
 
     try {

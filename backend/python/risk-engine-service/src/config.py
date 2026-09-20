@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     EUREKA_PORT: int = 5000
 
     APP_NAME: str = "risk-engine-service"
-    SERVER_PORT: int = 8000
+    SERVER_PORT: int = 5007
     HEARTBEAT_INTERVAL_SECS: int = 30
 
     SMS_SERVICE_NAME: str = "sms-service"

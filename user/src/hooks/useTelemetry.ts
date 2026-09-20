@@ -16,16 +16,23 @@ export function useTelemetry() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        const coords = {
-          latitude: Number(loc.coords.latitude.toFixed(6)),
-          longitude: Number(loc.coords.longitude.toFixed(6)),
-        };
-        setLocation({ ...coords, accuracy: loc.coords.accuracy });
-        return coords;
+        // Check for quick cached position first (fast & reliable on emulators and weak GPS signals)
+        let loc = await Location.getLastKnownPositionAsync();
+        if (!loc) {
+          loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        }
+        if (loc) {
+          const coords = {
+            latitude: Number(loc.coords.latitude.toFixed(6)),
+            longitude: Number(loc.coords.longitude.toFixed(6)),
+          };
+          setLocation({ ...coords, accuracy: loc.coords.accuracy });
+          return coords;
+        }
       }
     } catch (err) {
-      console.warn('GPS query skipped or denied, utilizing fallback coordinates:', err);
+      // Use console.log to avoid triggering Expo LogBox yellow popup
+      console.log('GPS unavailable or permission skipped, using fallback coordinates:', err);
     }
 
     const fallback = location

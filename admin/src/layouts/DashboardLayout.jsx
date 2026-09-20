@@ -24,6 +24,26 @@ export default function DashboardLayout() {
   const sessionRaw = window.localStorage.getItem('userSession');
   const session = sessionRaw ? JSON.parse(sessionRaw) : null;
   const isCitizen = userRole === 'Citizen';
+  const isMdoner = userRole === 'MDoNER Employee';
+  const isZonalOrDistrict = userRole === 'Zonal Admin' || userRole === 'District Admin';
+
+  // Role-based route guard enforcement
+  useEffect(() => {
+    const p = location.pathname;
+    if (p.includes('/app/reports')) {
+      navigate('/app/risk-map', { replace: true });
+      return;
+    }
+    if (isCitizen) {
+      if (p.includes('/app/alerts') || p.includes('/app/stations')) {
+        navigate('/app/risk-map', { replace: true });
+      }
+    } else if (isZonalOrDistrict) {
+      if (p.includes('/app/uploads')) {
+        navigate('/app/risk-map', { replace: true });
+      }
+    }
+  }, [location.pathname, isCitizen, isZonalOrDistrict, navigate]);
 
   // Handle clicking outside to close language dropdown
   useEffect(() => {
@@ -57,7 +77,7 @@ export default function DashboardLayout() {
             className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
               isCitizen
                 ? 'bg-slate-100 text-slate-700 border-slate-300'
-                : userRole === 'MDoNER Employee'
+                : isMdoner
                 ? 'bg-red-50 text-[#d93850] border-[#d93850]'
                 : 'bg-amber-50 text-amber-800 border-amber-300'
             }`}
@@ -69,12 +89,15 @@ export default function DashboardLayout() {
 
           <div className="h-6 w-px bg-[#e0e0e0] mx-2"></div>
           <nav className="flex gap-6 items-center">
+            {/* Risk Map: visible to all */}
             <Link 
               to="/app/risk-map" 
               className={`text-sm font-bold uppercase tracking-wider ${location.pathname.includes('risk-map') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
             >
               {t('nav_risk_map')}
             </Link>
+
+            {/* About: visible to all */}
             <Link 
               to="/app/about" 
               className={`text-sm font-bold uppercase tracking-wider ${location.pathname.includes('about') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
@@ -82,7 +105,7 @@ export default function DashboardLayout() {
               {t('nav_about_us')}
             </Link>
 
-            {/* Role Rule: Stations management hidden for regular Citizens */}
+            {/* Stations: visible to MDoNER, Zonal Admin, District Admin (hidden for Citizen) */}
             {!isCitizen && (
               <Link 
                 to="/app/stations" 
@@ -92,38 +115,35 @@ export default function DashboardLayout() {
               </Link>
             )}
 
-            <Link 
-              to="/app/alerts" 
-              className={`text-sm font-bold uppercase tracking-wider relative ${location.pathname.includes('alerts') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
-            >
-              <span>{t('nav_alerts')}</span>
-              {activeAlert && (
-                <span className="ml-1.5 inline-flex items-center px-1.5 py-0.2 text-[9px] font-black bg-[#d93850] text-white rounded-full animate-pulse">
-                  1
-                </span>
-              )}
-            </Link>
-
-            {/* Role Rule: Official Reports hidden for regular Citizens */}
+            {/* Alerts: visible to MDoNER, Zonal Admin, District Admin (hidden for Citizen) */}
             {!isCitizen && (
               <Link 
-                to="/app/reports" 
-                className={`text-sm font-bold uppercase tracking-wider ${location.pathname.includes('reports') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
+                to="/app/alerts" 
+                className={`text-sm font-bold uppercase tracking-wider relative ${location.pathname.includes('alerts') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
               >
-                {t('nav_reports')}
+                <span>{t('nav_alerts')}</span>
+                {activeAlert && (
+                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.2 text-[9px] font-black bg-[#d93850] text-white rounded-full animate-pulse">
+                    1
+                  </span>
+                )}
               </Link>
             )}
 
-            <Link 
-              to="/app/uploads" 
-              className={`text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 ${location.pathname.includes('uploads') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
-            >
-              <span>{t('nav_uploads')}</span>
-              <span className="text-[9px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-black uppercase">
-                {t('nav_media')}
-              </span>
-            </Link>
+            {/* Uploads: visible to Citizen (only their uploads) and MDoNER Employee (all uploads). Hidden for Zonal & District Admin */}
+            {(isCitizen || isMdoner) && (
+              <Link 
+                to="/app/uploads" 
+                className={`text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 ${location.pathname.includes('uploads') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}
+              >
+                <span>{isCitizen ? 'My Uploads' : t('nav_uploads')}</span>
+                <span className="text-[9px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-black uppercase">
+                  {t('nav_media')}
+                </span>
+              </Link>
+            )}
 
+            {/* AI Models / Stats */}
             <Link 
               to="/app/model-comparison" 
               className={`text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 ${location.pathname.includes('model-comparison') ? 'text-[#d93850] border-b-2 border-[#d93850] pb-1' : 'text-[#666666] hover:text-[#d93850]'}`}

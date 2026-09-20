@@ -26,6 +26,7 @@ public class UploadResponseDto {
     private String verificationStatus;
     private String severity;
     private GroundQuestionnaire groundQuestionnaire;
+    private String questionnaire;
     private Map<String, Object> payload;
 
     @Data

@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-numpy
-scipy
-pandas
-requests
-pydantic
-pydantic-settings
-py-eureka-client

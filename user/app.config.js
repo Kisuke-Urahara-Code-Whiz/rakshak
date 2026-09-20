@@ -43,7 +43,11 @@ module.exports = {
       reactCompiler: true,
     },
     extra: {
-      ngrokHost: process.env.NGROK_HOST || '7706-152-58-181-7.ngrok-free.app',
+      ngrokHost: process.env.NGROK_HOST || 'telesthetic-tridimensionally-margarete.ngrok-free.dev',
+      apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || process.env.API_BASE_URL,
+      wsUrl: process.env.EXPO_PUBLIC_WS_URL || process.env.WS_URL,
+      pythonWsHost: process.env.EXPO_PUBLIC_PYTHON_WS_HOST || process.env.PYTHON_WS_HOST || 'localhost:8000',
+      pythonWsUrl: process.env.EXPO_PUBLIC_PYTHON_WS_URL || process.env.PYTHON_WS_URL,
     },
   },
 };

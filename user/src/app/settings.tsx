@@ -1,10 +1,8 @@
-import { i18n } from '@/services/i18n';
-import { updateCitizenLanguage } from '@/services/telemetryApi';
-import { SupportedLanguage, useAppStore } from '@/stores/useAppStore';
+import { useAppStore } from '@/stores/useAppStore';
+import { API_BASE_URL } from '@/configs/env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { StatusBar, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
@@ -16,41 +14,10 @@ export default function SettingsScreen() {
     userName,
     department,
     language,
-    setLanguage,
     logout,
   } = useAppStore();
 
-  const [selectedLang, setSelectedLang] = useState<SupportedLanguage>(language);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  const availableLanguages = i18n.getAvailableLanguages();
   const isCitizen = userRole === 'Citizen';
-
-  const handleUpdateLanguage = async (newCode: SupportedLanguage) => {
-    if (newCode === language) return;
-
-    setSelectedLang(newCode);
-    setIsUpdating(true);
-
-    try {
-      const activeNumber = phoneNumber || '9832041182';
-      const res = await updateCitizenLanguage(activeNumber, newCode, 'OLD');
-      if (res.status < 200 || res.status >= 300) {
-        throw new Error(`Server returned status: ${res.status}`);
-      }
-
-      setLanguage(newCode);
-      i18n.setLanguage(newCode);
-      Alert.alert('Language Updated', `Active language switched to ${newCode.toUpperCase()}.`);
-    } catch (e: any) {
-      setSelectedLang(language);
-      // Still set local language preference if backend is offline
-      setLanguage(newCode);
-      i18n.setLanguage(newCode);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -68,22 +35,22 @@ export default function SettingsScreen() {
       
       {/* Header matching Admin Navbar */}
       <View className="px-5 py-4 border-b-2 border-[#d93850] bg-[#1a1a1a] flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()} className="bg-[#333333] px-3 py-1 border border-white/20">
+        <TouchableOpacity onPress={() => router.back()} className="bg-[#333333] px-3 py-1.5 border border-white/20 active:bg-black">
           <Text className="text-white font-bold text-xs uppercase tracking-wider">← Back</Text>
         </TouchableOpacity>
         <Text className="text-white font-black text-base uppercase tracking-widest">
           Node Settings
         </Text>
-        <View style={{ width: 50 }} />
+        <View style={{ width: 60 }} />
       </View>
 
-      <View className="p-4 flex-1 justify-between">
+      <ScrollView className="flex-1 p-4" contentContainerStyle={{ justifyContent: 'space-between', flexGrow: 1 }}>
         <View>
           {/* User Telemetry Profile */}
-          <View className="bg-white p-4 border border-[#e0e0e0] border-t-4 border-[#d93850] mb-5 shadow-sm">
+          <View className="bg-white p-4 border border-[#e0e0e0] border-t-4 border-[#d93850] mb-4 shadow-sm">
             <View className="flex-row items-center justify-between mb-2">
               <Text className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                Active Operational Identity
+                Operational Identity
               </Text>
               <View className="bg-[#1a1a1a] px-2 py-0.5">
                 <Text className="text-[9px] font-black uppercase tracking-wider text-[#f6d274]">
@@ -93,7 +60,7 @@ export default function SettingsScreen() {
             </View>
 
             <Text className="text-lg font-black font-mono text-[#1a1a1a]">
-              {isCitizen ? `+91 ${phoneNumber}` : `${userName || employeeId}`}
+              {isCitizen ? `+91 ${phoneNumber || '9832041182'}` : `${userName || employeeId}`}
             </Text>
 
             <Text className="text-xs text-[#666666] mt-1 font-bold">
@@ -101,78 +68,52 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-          {/* Language Selection Header */}
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-xs font-black text-[#1a1a1a] uppercase tracking-wider">
-              Interface Advisory Language
+          {/* Telemetry Network & Service Endpoints */}
+          <View className="bg-white p-4 border border-[#e0e0e0] mb-4 shadow-sm">
+            <Text className="text-xs font-black text-[#1a1a1a] uppercase tracking-wider mb-2">
+              Telemetry Server Configuration
             </Text>
-            {isUpdating && <ActivityIndicator size="small" color="#d93850" />}
+            <View className="bg-[#f8f9fa] p-3 border border-[#e2e8f0] mb-2">
+              <Text className="text-[10px] text-slate-500 font-bold uppercase">Gateway API Base</Text>
+              <Text className="text-xs font-mono font-bold text-slate-800 mt-0.5" numberOfLines={1}>
+                {API_BASE_URL}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center py-2 border-b border-[#f1f5f9]">
+              <Text className="text-xs font-bold text-slate-600">Active Regional Dialect</Text>
+              <View className="bg-[#1a1a1a] px-2 py-0.5">
+                <Text className="text-[10px] font-mono font-bold text-[#f6d274] uppercase">
+                  {language.toUpperCase()} (Switch on Home)
+                </Text>
+              </View>
+            </View>
+            <View className="flex-row justify-between items-center py-2">
+              <Text className="text-xs font-bold text-slate-600">System Pipeline Status</Text>
+              <Text className="text-xs font-bold text-emerald-600">● Operational</Text>
+            </View>
           </View>
 
-          <FlatList
-            data={availableLanguages}
-            keyExtractor={(item) => item.code}
-            renderItem={({ item }) => {
-              const isSelected = selectedLang === item.code;
-              return (
-                <TouchableOpacity
-                  disabled={isUpdating}
-                  onPress={() => handleUpdateLanguage(item.code as SupportedLanguage)}
-                  className={`p-3.5 border mb-2 flex-row items-center justify-between ${
-                    isSelected
-                      ? 'bg-red-50 border-[#d93850]'
-                      : 'bg-white border-[#e0e0e0]'
-                  }`}
-                  activeOpacity={0.8}
-                >
-                  <View>
-                    <Text
-                      className={`text-sm font-black ${
-                        isSelected ? 'text-[#d93850]' : 'text-[#1a1a1a]'
-                      }`}
-                    >
-                      {item.nativeName}
-                    </Text>
-                    <Text
-                      className={`text-[11px] font-bold uppercase tracking-wider mt-0.5 ${
-                        isSelected ? 'text-[#d93850]' : 'text-slate-500'
-                      }`}
-                    >
-                      {item.name}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center gap-2">
-                    <View
-                      className={`px-2 py-0.5 border ${
-                        isSelected ? 'border-[#d93850] bg-white' : 'border-[#e0e0e0] bg-[#f4f6f8]'
-                      }`}
-                    >
-                      <Text
-                        className={`font-mono text-[10px] uppercase font-bold ${
-                          isSelected ? 'text-[#d93850]' : 'text-slate-500'
-                        }`}
-                      >
-                        {item.code.toUpperCase()}
-                      </Text>
-                    </View>
-                    {isSelected && <View className="w-2.5 h-2.5 rounded-full bg-[#d93850]" />}
-                  </View>
-                </TouchableOpacity>
-              );
-            }}
-          />
+          {/* Regional Dialect Info Note */}
+          <View className="bg-blue-50 border border-blue-200 p-3 mb-4">
+            <Text className="text-xs font-black text-blue-900 uppercase mb-1">
+              Regional Language Switcher
+            </Text>
+            <Text className="text-[11px] text-blue-800">
+              Language selection is managed directly on the Home screen regional strip to immediately sync dialect preferences with the centralized backend triage service.
+            </Text>
+          </View>
         </View>
 
         {/* Logout Button */}
         <TouchableOpacity
           onPress={handleLogout}
-          className="w-full bg-[#333333] py-4 items-center justify-center shadow-md active:bg-[#1a1a1a]"
+          className="w-full bg-[#333333] py-4 items-center justify-center shadow-md active:bg-[#1a1a1a] mb-6"
         >
           <Text className="text-white text-xs font-black uppercase tracking-widest">
             Logout / Exit Node
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

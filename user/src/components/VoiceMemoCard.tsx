@@ -60,7 +60,10 @@ export function VoiceMemoCard({
       await audioRecorder.stop();
       setIsRecording(false);
       await AudioModule.setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
-      if (audioRecorder.uri) onSetVoiceUri(audioRecorder.uri);
+      const finalUri = audioRecorder.uri || audioRecorder.getStatus()?.url;
+      if (finalUri) {
+        onSetVoiceUri(finalUri);
+      }
     } catch {
       Alert.alert(
         i18n.t('alert_audio_err_title'),

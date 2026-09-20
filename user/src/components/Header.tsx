@@ -53,15 +53,12 @@ export function Header({ phoneNumber, onExit }: HeaderProps) {
 
       {/* Action Buttons */}
       <View className="flex-row items-center gap-2">
-        <TouchableOpacity
-          onPress={() => router.push('/select-language' as any)}
-          className="bg-[#d93850]/20 border border-[#d93850] px-2 py-1.5 active:bg-[#d93850]/40 flex-row items-center gap-1"
-        >
+        <View className="bg-[#d93850]/20 border border-[#d93850] px-2 py-1.5 flex-row items-center gap-1">
           <Text className="text-[10px]">🌐</Text>
           <Text className="text-[#f6d274] text-[10px] font-black uppercase tracking-wider font-mono">
             {language.toUpperCase()}
           </Text>
-        </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           onPress={() => router.push('/settings' as any)}

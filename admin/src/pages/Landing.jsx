@@ -3,27 +3,58 @@ import { Link } from 'react-router-dom';
 
 const CAROUSEL_SLIDES = [
   {
-    url: 'https://images.unsplash.com/photo-1621682372775-533449e550ed?q=80&w=2070&auto=format&fit=crop',
+    imageName: 'lpage1',
+    fallbackUrl: 'https://images.unsplash.com/photo-1621682372775-533449e550ed?q=80&w=2070&auto=format&fit=crop',
     title: 'High-Risk Slope & Debris Flow Hazard',
     badge: 'Active Landslide Sector',
     location: 'Sikkim & Arunachal Himalayan Corridor',
     detail: 'Continuous slope displacement monitoring and critical shear strain detection across fragile montane corridors.'
   },
   {
-    url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
+    imageName: 'lpage2',
+    fallbackUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
     title: 'Orbital Satellite Radar Surveillance',
     badge: 'SAR Telemetry Sync',
     location: 'North Eastern Regional Coverage Grid',
     detail: 'Interferometric Synthetic Aperture Radar (InSAR) and multispectral optical passes tracking precipitation saturation.'
   },
   {
-    url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186c5f8?q=80&w=2070&auto=format&fit=crop',
+    imageName: 'lpage3',
+    fallbackUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb186c5f8?q=80&w=2070&auto=format&fit=crop',
     title: 'Disaster Management & Incident Command',
     badge: 'Govt of India Initiative',
     location: 'NDMA & Regional Emergency Outposts',
     detail: 'Coordinated early warning dissemination, institutional response protocols, and rapid tactical rescue deployment.'
   }
 ];
+
+function CarouselSlideImage({ slide }) {
+  // Cascades through public extensions: /lpage1.jpg, /lpage1.png, /lpage1.jpeg, /lpage1.webp, /lpage1, then fallback
+  const possiblePaths = [
+    `/${slide.imageName}.jpg`,
+    `/${slide.imageName}.png`,
+    `/${slide.imageName}.jpeg`,
+    `/${slide.imageName}.webp`,
+    `/${slide.imageName}`,
+    slide.fallbackUrl
+  ];
+  const [attemptIndex, setAttemptIndex] = useState(0);
+
+  const handleError = () => {
+    if (attemptIndex < possiblePaths.length - 1) {
+      setAttemptIndex((prev) => prev + 1);
+    }
+  };
+
+  return (
+    <img 
+      src={possiblePaths[attemptIndex]} 
+      alt={slide.title}
+      onError={handleError}
+      className="w-full h-full object-cover opacity-60 mix-blend-luminosity filter contrast-125 brightness-90"
+    />
+  );
+}
 
 export default function Landing() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -84,11 +115,7 @@ export default function Landing() {
                 idx === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
-              <img 
-                src={slide.url} 
-                alt={slide.title} 
-                className="w-full h-full object-cover opacity-60 mix-blend-luminosity filter contrast-125 brightness-90"
-              />
+              <CarouselSlideImage slide={slide} />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/30 to-transparent"></div>
               <div className="absolute inset-0 bg-gradient-to-r from-[#0f172a]/80 via-transparent to-transparent"></div>
             </div>

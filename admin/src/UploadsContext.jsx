@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import ENV from "./config/env";
 
 const UploadsContext = createContext(null);
 
-// Local Spring Boot backend base URL
-const BASE_URL = "http://localhost:5001/media/sse";
+// Spring Boot backend base URL
+const BASE_URL = `${ENV.API_BASE_URL}/media/sse`;
 
 export function UploadsProvider({ children }) {
   const [uploads, setUploads] = useState([]);

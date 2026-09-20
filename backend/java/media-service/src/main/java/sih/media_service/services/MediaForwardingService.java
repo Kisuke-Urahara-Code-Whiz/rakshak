@@ -42,6 +42,7 @@ public class MediaForwardingService {
                 .lat(requestDto.getLat())
                 .lon(requestDto.getLon())
                 .time(requestDto.getTime())
+                .questionnaire(requestDto.getQuestionnaire())
                 .build();
 
         try {

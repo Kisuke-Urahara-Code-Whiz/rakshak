@@ -10,6 +10,12 @@ export const ENV = {
   // Backend REST API Base URL for incident uploads, auth, and reports (Spring Cloud Gateway)
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
 
+  // Risk service base URL (routed via Gateway)
+  RISK_API_URL: import.meta.env.VITE_RISK_API_URL || `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'}/risk`,
+
+  // Python Telemetry & Risk WebSocket URL (serves /ws/front/{client_id})
+  PYTHON_WS_URL: import.meta.env.VITE_PYTHON_WS_URL || 'ws://localhost:8000',
+
   // WebSocket automatic reconnection backoff interval (ms)
   WS_RECONNECT_INTERVAL: Number(import.meta.env.VITE_WS_RECONNECT_INTERVAL) || 5000,
 
