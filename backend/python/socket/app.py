@@ -17,7 +17,8 @@ async def lifespan(app: FastAPI):
     app.state.real_soil = 350
     app.state.vibration = 0.1
     app.state.smsLimit = 2
-    app.state.sms=0
+    app.state.sms = 0
+    app.state.last_sms_alert_time = 0.0
     yield
 
 app = FastAPI(lifespan=lifespan)

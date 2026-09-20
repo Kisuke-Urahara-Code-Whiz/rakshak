@@ -1,5 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import os
+import time
 import json
 from datetime import datetime
 import random
@@ -7,6 +8,7 @@ import requests
 import threading
 
 router = APIRouter()
+SMS_RATE_LIMIT_SECONDS = 60.0
 
 def _dispatch_sms_fire_and_forget(url: str, timeout: float = 2.0):
     """Dispatches SMS alert in a background daemon thread so the real-time stream is never blocked."""
@@ -181,16 +183,25 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                     "duration_ms": 2000,
                 }
                 print(f"🚨 [ALERT] Threshold breached! Soil value = {soil_value}")
-                # Fire and forget POST in a separate daemon thread to prevent stalling the telemetry stream
-                if sms <= limit:
-                    sms += 1
-                    websocket.app.state.sms = sms
-                    sms_url = os.getenv("SMS_SERVICE_URL", "https://telesthetic-tridimensionally-margarete.ngrok-free.dev/sms/send-alert")
+
+                # Rate limit: at most 1 SMS alert POST request per 1 minute (60.0s cooldown)
+                now = time.time()
+                last_sms_time = getattr(websocket.app.state, "last_sms_alert_time", 0.0)
+                if now - last_sms_time >= SMS_RATE_LIMIT_SECONDS:
+                    websocket.app.state.last_sms_alert_time = now
+                    sms_url = os.getenv(
+                        "SMS_SERVICE_URL",
+                        "https://telesthetic-tridimensionally-margarete.ngrok-free.dev/sms/send-alert"
+                    )
+                    print(f"🚨 [SMS DISPATCH] 1-minute cooldown elapsed. Triggering SMS alert POST (fire-and-forget)...")
                     threading.Thread(
                         target=_dispatch_sms_fire_and_forget,
                         args=(sms_url, 2.0),
                         daemon=True,
                     ).start()
+                else:
+                    cooldown_left = round(SMS_RATE_LIMIT_SECONDS - (now - last_sms_time), 1)
+                    print(f"⏳ [SMS RATE LIMITED] Cooldown active ({cooldown_left}s remaining). POST suppressed to enforce 1/min limit.")
 
                 if hasattr(manager, "broadcast_to_role"):
                     await manager.broadcast_to_role(json.dumps(alert_message), "ESP")
