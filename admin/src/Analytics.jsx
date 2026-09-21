@@ -32,7 +32,7 @@ const TRANSLATIONS = {
     title: 'RAKSHAK',
     subtitle: 'Landslide Risk & Soil Moisture Monitoring Platform',
     statusSynced: 'GEO-MESH: SYNCHRONIZED',
-    corridor: 'SELECTED CORRIDOR: NH-54 (AIZWAL REGION)',
+    corridor: 'SELECTED CORRIDOR: UNAKOTI SECTOR (TRIPURA REGION)',
     gisTitle: 'SURFACE GIS MAP & HEATZONE',
     soilMoisture: 'Soil Moisture',
     rainfall: 'Simulated Rainfall',
@@ -60,7 +60,7 @@ const TRANSLATIONS = {
     title: 'रक्षक',
     subtitle: 'भूस्खलन जोखिम और मिट्टी की नमी निगरानी मंच',
     statusSynced: 'जियो-मेष: समन्वयित',
-    corridor: 'चयनित गलियारा: एनएच-54 (आइज़ोल क्षेत्र)',
+    corridor: 'चयनित गलियारा: उनाकोटी क्षेत्र (त्रिपुरा)',
     gisTitle: 'सतह जीआईएस मानचित्र एवं हीटज़ोन',
     soilMoisture: 'मिट्टी की नमी',
     rainfall: 'सिमुलेटेड वर्षा',
@@ -88,7 +88,7 @@ const TRANSLATIONS = {
     title: 'রক্ষক',
     subtitle: 'ভূমিধস ঝুঁকি ও মাটির আর্দ্রতা পর্যবেক্ষণ প্ল্যাটফর্ম',
     statusSynced: 'জিও-মেশ: সিঙ্ক্রোনাইজড',
-    corridor: 'নির্বাচিত করিডোর: NH-54 (আইজল অঞ্চল)',
+    corridor: 'নির্বাচিত করিডোর: উনকোটি সেক্টর (ত্রিপুরা)',
     gisTitle: 'সারফেস জিআইএস মানচিত্র এবং হিট জোন',
     soilMoisture: 'মাটির আর্দ্রতা',
     rainfall: 'সিমুলেটেড বৃষ্টিপাত',
@@ -116,8 +116,8 @@ const TRANSLATIONS = {
     title: 'ৰক্ষক',
     subtitle: 'ভূমিস্খলন বিপশংকা আৰু মাটিৰ আৰ্দ্ৰতা নিৰীক্ষণ মঞ্চ',
     statusSynced: 'জিঅ’-মেছ: সংমিশ্ৰিত',
-    corridor: 'নিৰ্বাচিত কৰিডৰ: NH-54 (আইজল অঞ্চল)',
-    gisTitle: 'পৃষ্ঠ জিআইএছ মানচিত্ৰ আৰু হিট জ’ন',
+    corridor: 'নিৰ্বাচিত কৰিডৰ: উনাকোটি খণ্ড (ত্ৰিপুৰা)',
+    gisTitle: 'পৃষ্ঠ জিআইএছ মানচিত্ৰ আৰু হিটজ’ন',
     soilMoisture: 'মাটিৰ আৰ্দ্ৰতা',
     rainfall: 'কৃত্ৰিম বৃষ্টিপাত',
     vibration: 'কম্পন সংবেদক (0 - 1)',
@@ -129,7 +129,7 @@ const TRANSLATIONS = {
     guideTitle: 'মাটিৰ আৰ্দ্ৰতা মাপকাঠী নিৰ্দেশিকা',
     guideWet: '< ২০০: অতি বিপদসংকুল আৰু সেমেকা মাটি (জৰুৰী সকীয়ানী)',
     guideMod: '২০০ - ২৫০: মধ্যম বিপশংকাৰ মাটি (নিৰীক্ষণ অৱস্থা)',
-    guideNorm: '> ২৫০: স্বাভাৱিক মাটি (সুৰক্ষিত)',
+    guideNorm: '> ২০০: স্বাভাৱিক মাটি (সুৰক্ষিত)',
     fastapiModalTitle: 'ফাষ্ট-এপিআই ব্যাকএণ্ড ৱেবছকেট ক’ড',
     copySnippet: 'ক’ড কপি কৰক',
     copied: 'কপি হ’ল!',
@@ -142,48 +142,40 @@ const TRANSLATIONS = {
   },
 };
 
+// Unakoti Node & District Hospital Coordinates
+const UNAKOTI_NODE_COORDS = { lat: 24.3223, lng: 92.0163 };
+const HOSPITAL_COORDS = [24.3120, 92.0220]; 
+
 export default function Analytics() {
   const [selectedLang, setSelectedLang] = useState('EN');
   const t = TRANSLATIONS[selectedLang] || TRANSLATIONS.EN;
 
   // Real-Time Telemetry States
-  const [soilMoisture, setSoilMoisture] = useState(450);
-  const [vibration, setVibration] = useState(0.08);
-  const [riskPercentage, setRiskPercentage] = useState(12);
+  const [soilMoisture, setSoilMoisture] = useState(419);
+  const [vibration, setVibration] = useState(0.02);
+  const [riskPercentage, setRiskPercentage] = useState(31);
   const [currentTime, setCurrentTime] = useState('');
   const [smsLogs, setSmsLogs] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [blipActive, setBlipActive] = useState(true);
 
-  // Historical Arrays for Real-Time Charts (Fixed buffer length)
-  const [historicalMoisture, setHistoricalMoisture] = useState([450]);
-  const [historicalRainfall, setHistoricalRainfall] = useState([54.0]);
-  const [historicalVibration, setHistoricalVibration] = useState([0.08]);
-  const [chartLabels, setChartLabels] = useState([new Date().toLocaleTimeString()]);
+  // Historical Arrays for Real-Time Charts
+  const [historicalMoisture, setHistoricalMoisture] = useState([419, 410, 400, 390, 380, 370, 360, 350, 410, 400, 409]);
+  const [historicalRainfall, setHistoricalRainfall] = useState([31.2, 32.1, 33.0, 34.5, 35.0, 36.2, 38.0, 40.1, 5.2, 5.5, 4.3]);
+  const [historicalVibration, setHistoricalVibration] = useState([0.02, 0.02, 0.01, 0.02, 0.03, 0.08, 0.02, 0.02, 0.03, 0.02, 0.02]);
+  const [chartLabels, setChartLabels] = useState([
+    '11:59:16', '11:59:17', '11:59:18', '11:59:19', '11:59:20', '11:59:21', '11:59:22', '11:59:23', '11:59:24', '11:59:25', '11:59:27'
+  ]);
 
   // Map References
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const polygonRef = useRef(null);
-  const markerRef = useRef(null);
+  const heatzoneRectRef = useRef(null);
+  const routeLayerRef = useRef(null);
 
-  // Default to Unakoti ADM5-Node 85 (Tripura) if not set in localStorage
-  const [targetCoords, setTargetCoords] = useState({ lat: 23.7548, lng: 92.4273 });
+  const [targetCoords] = useState(UNAKOTI_NODE_COORDS);
 
-  // 1. Fetch Location Coordinates
-  useEffect(() => {
-    const storedLat = parseFloat(localStorage.getItem('latitude'));
-    const storedLng = parseFloat(localStorage.getItem('longitude'));
-
-    if (!isNaN(storedLat) && !isNaN(storedLng)) {
-      setTargetCoords({ lat: storedLat, lng: storedLng });
-    } else {
-      setTargetCoords({ lat: 23.7548, lng: 92.4273 });
-    }
-  }, []);
-
-  // 2. Real-Time Clock
+  // Real-Time Clock
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -192,7 +184,7 @@ export default function Analytics() {
     return () => clearInterval(timer);
   }, []);
 
-  // 3. WebSocket Listener
+  // WebSocket Listener
   useEffect(() => {
     const clientId = 'front_1';
     const wsUrl = `ws://localhost:8000/ws/front/${clientId}`;
@@ -236,7 +228,6 @@ export default function Analytics() {
 
             const timeStr = data.timestamp || new Date().toLocaleTimeString();
 
-            // Append live server data with max 12 sliding data points
             if (rawSoil !== null) {
               const roundedSoil = Math.round(rawSoil);
               const rainfall = data.rainfall_rate || parseFloat((roundedSoil * 0.12).toFixed(1));
@@ -265,7 +256,23 @@ export default function Analytics() {
     };
   }, [selectedLang, targetCoords]);
 
-  // 4. Initialize Leaflet Map
+  // Fetch Street Geometry from OSRM
+  const fetchStreetRoute = async (start, end) => {
+    try {
+      const response = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end[1]},${end[0]}?overview=full&geometries=geojson`
+      );
+      const data = await response.json();
+      if (data.routes && data.routes.length > 0) {
+        return data.routes[0].geometry.coordinates.map((coord) => [coord[1], coord[0]]);
+      }
+    } catch (err) {
+      console.error('[OSRM] Error fetching street route:', err);
+    }
+    return null;
+  };
+
+  // Initialize Leaflet Map centered on Unakoti, Tripura
   useEffect(() => {
     if (!document.getElementById('leaflet-css')) {
       const link = document.createElement('link');
@@ -302,96 +309,98 @@ export default function Analytics() {
         maxZoom: 18,
       }).addTo(map);
 
-      const towerName = localStorage.getItem('towerName') || 'Unakoti ADM5-Node 85';
+      // Render GIS Landslide Heatzone Mesh Box
+      const bounds = [
+        [lat - 0.012, lng - 0.015],
+        [lat + 0.012, lng + 0.015],
+      ];
+      const heatzoneRect = L.rectangle(bounds, {
+        color: '#10B981',
+        weight: 1.5,
+        fillColor: '#10B981',
+        fillOpacity: 0.35,
+      }).addTo(map);
+      heatzoneRectRef.current = heatzoneRect;
 
+      // Node Location Marker
       const customIcon = L.divIcon({
-        className: 'custom-tower-blip-icon',
-        html: `
-          <div style="position:relative; width:48px; height:48px; display:flex; align-items:center; justify-content:center;">
-            ${blipActive ? '<div style="position:absolute; width:42px; height:42px; border-radius:50%; border:2.5px solid #EF4444; animation: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; opacity:0.85;"></div>' : ''}
-            <div style="position:relative; z-index:10; background:#EF4444; width:26px; height:26px; border-radius:50%; border:2.5px solid white; box-shadow:0 0 10px rgba(239,68,68,0.7); display:flex; align-items:center; justify-content:center; color:white; font-size:12px;">🗼</div>
-          </div>
-        `,
-        iconSize: [48, 48],
-        iconAnchor: [24, 24],
+        className: 'custom-div-icon',
+        html: `<div style="background-color:#EF4444; width:16px; height:16px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(239,68,68,0.8);"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
       });
 
       const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
-      marker.bindPopup(`
-        <div style="font-family:sans-serif; padding:2px;">
-          <b style="font-size:13px; color:#0f172a;">${towerName}</b><br/>
-          <span style="font-size:10px; color:#64748b;">Tripura Sector • KIO-TR-085</span><br/>
-          <span style="font-size:10px; font-family:monospace; color:#0284c7;">Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}</span><br/>
-          <span style="font-size:10px; color:#10B981; font-weight:bold;">● In-Situ Telemetry Station Active</span>
-        </div>
-      `).openPopup();
-      markerRef.current = marker;
+      marker
+        .bindPopup(
+          `<div style="font-family:sans-serif; font-size:12px;">
+            <b>Unakoti (Tripura) - Node 85</b><br/>
+            Tripura Sector - KIO-TR-085<br/>
+            Lat: ${lat} | Lng: ${lng}<br/>
+            <span style="color:#10B981; font-weight:bold;">In-Situ Telemetry Station Active</span>
+          </div>`
+        )
+        .openPopup();
 
-      const delta = 0.025;
-      const polygonCoords = [
-        [lat + delta, lng - delta],
-        [lat + delta, lng + delta],
-        [lat - delta, lng + delta],
-        [lat - delta, lng - delta],
-      ];
-
-      const polygon = L.polygon(polygonCoords, {
-        color: '#10B981',
-        fillColor: '#10B981',
-        fillOpacity: 0.35,
-        weight: 2,
-      }).addTo(map);
-
-      polygonRef.current = polygon;
       mapInstanceRef.current = map;
-
       setTimeout(() => map.invalidateSize(), 300);
     }
   }, [targetCoords]);
 
-  // Update marker blip on toggle
+  // Update Heatzone Color & Emergency Route
   useEffect(() => {
-    if (markerRef.current && window.L) {
-      const isBlipOn = blipActive;
-      const newIcon = window.L.divIcon({
-        className: 'custom-tower-blip-icon',
-        html: `
-          <div style="position:relative; width:48px; height:48px; display:flex; align-items:center; justify-content:center;">
-            ${isBlipOn ? '<div style="position:absolute; width:42px; height:42px; border-radius:50%; border:2.5px solid #EF4444; animation: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; opacity:0.85;"></div>' : ''}
-            <div style="position:relative; z-index:10; background:#EF4444; width:26px; height:26px; border-radius:50%; border:2.5px solid white; box-shadow:0 0 10px rgba(239,68,68,0.7); display:flex; align-items:center; justify-content:center; color:white; font-size:12px;">🗼</div>
-          </div>
-        `,
-        iconSize: [48, 48],
-        iconAnchor: [24, 24],
-      });
-      markerRef.current.setIcon(newIcon);
-    }
-  }, [blipActive]);
+    if (!mapInstanceRef.current) return;
 
-  // 5. Heatmap Polygon Updates
-  useEffect(() => {
-    if (!polygonRef.current) return;
+    const isHighRisk = soilMoisture < 200 || riskPercentage > 50;
 
-    let strokeColor = '#10B981';
-    let fillColor = '#10B981';
-
-    if (soilMoisture < 200) {
-      strokeColor = '#EF4444';
-      fillColor = '#EF4444';
-    } else if (soilMoisture >= 200 && soilMoisture <= 250) {
-      strokeColor = '#F59E0B';
-      fillColor = '#F59E0B';
+    if (heatzoneRectRef.current) {
+      if (isHighRisk) {
+        heatzoneRectRef.current.setStyle({
+          color: '#EF4444',
+          fillColor: '#EF4444',
+          fillOpacity: 0.45,
+        });
+      } else {
+        heatzoneRectRef.current.setStyle({
+          color: '#10B981',
+          fillColor: '#10B981',
+          fillOpacity: 0.35,
+        });
+      }
     }
 
-    polygonRef.current.setStyle({
-      color: strokeColor,
-      fillColor: fillColor,
-      fillOpacity: 0.4,
-    });
-  }, [soilMoisture]);
+    async function updateHospitalRoute() {
+      const L = window.L;
+
+      if (!isHighRisk) {
+        if (routeLayerRef.current) {
+          mapInstanceRef.current.removeLayer(routeLayerRef.current);
+          routeLayerRef.current = null;
+        }
+        return;
+      }
+
+      if (!routeLayerRef.current && L) {
+        const routeCoords = await fetchStreetRoute(targetCoords, HOSPITAL_COORDS);
+        if (routeCoords && mapInstanceRef.current) {
+          const routePolyline = L.polyline(routeCoords, {
+            color: '#DC2626',
+            weight: 3.5,
+            opacity: 0.85,
+            dashArray: '4, 4',
+          }).addTo(mapInstanceRef.current);
+
+          routePolyline.bindPopup(`<b>EMERGENCY HOSPITAL ROUTE</b><br>Path to Unakoti District Hospital`);
+          routeLayerRef.current = routePolyline;
+        }
+      }
+    }
+
+    updateHospitalRoute();
+  }, [soilMoisture, riskPercentage, targetCoords]);
 
   // Status Calculations
-  const isHighRisk = soilMoisture < 200 || riskPercentage > 85;
+  const isHighRisk = soilMoisture < 200 || riskPercentage > 50;
 
   const getStatusText = () => {
     if (soilMoisture < 200 || riskPercentage > 50) return t.statusCritical;
@@ -415,7 +424,7 @@ export default function Analytics() {
         borderColor: '#0284C7',
         backgroundColor: 'rgba(2, 132, 199, 0.15)',
         fill: true,
-        tension: 0.4, // Smoother line curve
+        tension: 0.4,
         borderWidth: 2,
         pointRadius: 3,
       },
@@ -441,7 +450,7 @@ export default function Analytics() {
         label: t.vibration,
         data: historicalVibration,
         borderColor: '#E11D48',
-        backgroundColor: 'rgba(225, 29, 72, 0.1)',
+        backgroundColor: 'rgba(225, 19, 72, 0.1)',
         fill: true,
         tension: 0.3,
         borderWidth: 2,
@@ -450,19 +459,16 @@ export default function Analytics() {
     ],
   };
 
-  // FIXED Y-AXIS CHART OPTIONS TO PREVENT GRAPH FLUTTERING/JUMPING
   const moistureChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: { duration: 300 }, // Smooth transition
-    plugins: {
-      legend: { display: false },
-    },
+    animation: { duration: 300 },
+    plugins: { legend: { display: false } },
     scales: {
       x: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { size: 10 } } },
       y: {
         min: 0,
-        max: 600, // FIXED AXIS BOUNDS
+        max: 600,
         grid: { color: '#E2E8F0' },
         ticks: { stepSize: 100, color: '#64748B', font: { size: 10 } },
       },
@@ -478,7 +484,7 @@ export default function Analytics() {
       x: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { size: 10 } } },
       y: {
         min: 0,
-        max: 80, // FIXED AXIS BOUNDS
+        max: 80,
         grid: { color: '#E2E8F0' },
         ticks: { color: '#64748B', font: { size: 10 } },
       },
@@ -494,7 +500,7 @@ export default function Analytics() {
       x: { grid: { color: '#E2E8F0' }, ticks: { color: '#64748B', font: { size: 10 } } },
       y: {
         min: 0.0,
-        max: 1.0, // FIXED AXIS BOUNDS
+        max: 1.0,
         grid: { color: '#E2E8F0' },
         ticks: { color: '#64748B', font: { size: 10 } },
       },
@@ -528,7 +534,7 @@ export default function Analytics() {
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-100 text-slate-800 font-sans p-4 md:p-6">
+    <div className="h-screen w-full bg-slate-100 text-slate-800 font-sans p-4 md:p-6 overflow-y-auto">
       {/* TOP HEADER */}
       <header className="mb-6 bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-3">
@@ -538,7 +544,8 @@ export default function Analytics() {
             className="w-9 h-9 object-contain"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="%230284c7"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 18H4L12 3z"/></svg>';
+              e.target.src =
+                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="%230284c7"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 18H4L12 3z"/></svg>';
             }}
           />
           <div>
@@ -567,13 +574,11 @@ export default function Analytics() {
             <option value="BN">বাংলা (Bengali)</option>
             <option value="AS">অসমীয়া (Assamese)</option>
           </select>
-
-          
         </div>
       </header>
 
       {/* MAIN CONTENT GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
         {/* LEFT COLUMN: GIS MAP & HISTORICAL GRAPHS (7 Cols) */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           {/* GIS MAP CARD */}
@@ -582,33 +587,16 @@ export default function Analytics() {
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
                 <h2 className="text-sm font-bold tracking-wide text-slate-800 uppercase">{t.gisTitle}</h2>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded flex items-center gap-1">
-                  <span>🗼</span>
-                  <span>Unakoti Node 85</span>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-300">
+                  UNAKOTI NODE 85
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setBlipActive(!blipActive)}
-                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded border transition-colors cursor-pointer ${
-                    blipActive
-                      ? 'bg-red-50 text-[#d93850] border-red-300 shadow-2xs'
-                      : 'bg-slate-100 text-slate-500 border-slate-300'
-                  }`}
-                  title="Toggle Tower Radar Pulse Blip"
-                >
-                  {blipActive ? '📡 Radar Blip: ON' : '📡 Radar Blip: OFF'}
-                </button>
-                <div className="text-xs text-slate-500 font-mono">
-                  Lat: {targetCoords.lat.toFixed(4)} | Lng: {targetCoords.lng.toFixed(4)}
-                </div>
+              <div className="text-[11px] font-mono text-slate-500">
+                Lat: {targetCoords.lat} | Lng: {targetCoords.lng}
               </div>
             </div>
 
-            <div
-              ref={mapContainerRef}
-              className="w-full h-80 rounded-lg border border-slate-200 z-0 bg-slate-50"
-            />
+            <div ref={mapContainerRef} className="w-full h-64 rounded-lg border border-slate-200 z-0 bg-slate-50" />
           </div>
 
           {/* STABILIZED SOIL MOISTURE GRAPH */}
@@ -619,7 +607,7 @@ export default function Analytics() {
                 {soilMoisture}
               </span>
             </div>
-            <div className="h-44">
+            <div className="h-36 w-full">
               <Line data={moistureChartData} options={moistureChartOptions} />
             </div>
           </div>
@@ -627,14 +615,12 @@ export default function Analytics() {
           {/* SIMULATED RAINFALL GRAPH */}
           <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-bold text-slate-800">
-                {t.rainfall} 
-              </h3>
+              <h3 className="text-sm font-bold text-slate-800">{t.rainfall}</h3>
               <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                {((485 - soilMoisture )* 0.056).toFixed(1)} mm/h
+                {((485 - soilMoisture) * 0.056).toFixed(1)} mm/h
               </span>
             </div>
-            <div className="h-44">
+            <div className="h-36 w-full">
               <Bar data={rainfallChartData} options={rainfallChartOptions} />
             </div>
           </div>
@@ -675,7 +661,7 @@ export default function Analytics() {
                 {vibration}
               </span>
             </div>
-            <div className="h-40">
+            <div className="h-36 w-full">
               <Line data={vibrationChartData} options={vibrationChartOptions} />
             </div>
           </div>
@@ -773,7 +759,7 @@ export default function Analytics() {
               </button>
             </div>
             <div className="p-4 bg-slate-950 font-mono text-xs text-emerald-400 overflow-x-auto max-h-96">
-              <pre>{"// FastAPI WebSocket code"}</pre>
+              <pre>{'// FastAPI WebSocket code'}</pre>
             </div>
             <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
               <button
