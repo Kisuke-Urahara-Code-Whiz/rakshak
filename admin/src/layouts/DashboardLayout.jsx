@@ -10,7 +10,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
-  const { activeAlert, isMuted, toggleMute, wsStatus, isWsConnected, wsUrl } = useAlert();
+  const { activeAlert, isMuted, toggleMute } = useAlert();
 
   const languageOptions = [
     { code: 'ENG', label: 'English', native: 'ENG' },
@@ -170,25 +170,6 @@ export default function DashboardLayout() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* WebSocket Status Indicator */}
-          <div 
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-[#f8fafc] border border-[#cbd5e1] text-[10px] font-mono font-bold text-slate-700 rounded cursor-help"
-            title={`WebSocket Endpoint: ${wsUrl}\nStatus: ${wsStatus}`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isWsConnected
-                  ? 'bg-emerald-500 animate-pulse'
-                  : wsStatus === 'CONNECTING'
-                  ? 'bg-amber-400 animate-ping'
-                  : 'bg-blue-500'
-              }`}
-            />
-            <span className="uppercase font-black text-[9px]">
-              {isWsConnected ? t('ws_live') : wsStatus === 'CONNECTING' ? t('ws_connecting') : t('ws_standby')}
-            </span>
-          </div>
-
           {/* Audio Alert Beep Mute/Unmute Toggle */}
           <button
             onClick={toggleMute}

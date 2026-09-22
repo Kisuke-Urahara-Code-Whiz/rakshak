@@ -50,7 +50,7 @@ export function StationsViewCard({ userRole, userDistrict }: StationsViewCardPro
         </View>
         <View className="bg-emerald-50 border border-emerald-300 px-2 py-0.5">
           <Text className="text-[9px] font-bold text-emerald-800 uppercase">
-            Live Link
+            Online
           </Text>
         </View>
       </View>

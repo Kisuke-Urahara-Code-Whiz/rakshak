@@ -97,7 +97,7 @@ export default function IoTSimulator() {
 
   // Connection and Critical Status
   const isSocketConnected = soilConnected || (soilWs.current && soilWs.current.readyState === WebSocket.OPEN);
-  const isCriticalRisk = riskPercent >= 75 || (networkSyncedRisk !== null && networkSyncedRisk >= 75);
+  const isCriticalRisk = riskPercent >= 85 || (networkSyncedRisk !== null && networkSyncedRisk >= 85);
 
   // 🚨 Requirement 1: If IoT page is connected to socket and risk probability goes to critical, turn on buzzer immediately!
   useEffect(() => {
@@ -504,8 +504,8 @@ export default function IoTSimulator() {
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Target Host Badge */}
           <div className="bg-[#111827] border border-[#1e293b] px-3 py-1 text-xs font-mono font-bold text-slate-300 flex items-center gap-1.5 shadow-sm">
-            <span className="text-slate-500 uppercase text-[10px] font-black">TARGET WS:</span>
-            <span className="text-cyan-400">{ENV.IOT_WS_URL}</span>
+            <span className="text-slate-500 uppercase text-[10px] font-black">TELEMETRY BUS:</span>
+            <span className="text-emerald-400 font-bold">IN-SITU SENSOR MESH (PORT 8000)</span>
           </div>
 
           {/* Buzzer Sound Toggle */}
@@ -671,13 +671,13 @@ export default function IoTSimulator() {
                       : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
                   }`}
                 >
-                  {riskPercent}% Probability {riskPercent >= 75 ? '• CRITICAL' : riskPercent >= 50 ? '• WARNING' : '• NORMAL'}
+                  {riskPercent}% Probability {riskPercent >= 85 ? '• CRITICAL' : riskPercent >= 50 ? '• WARNING' : '• NORMAL'}
                 </span>
               </div>
               <div className="h-2.5 w-full bg-slate-900 overflow-hidden border border-[#1e293b]">
                 <div
                   className={`h-full transition-all duration-300 ${
-                    riskPercent >= 75
+                    riskPercent >= 85
                       ? 'bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.8)]'
                       : riskPercent >= 50
                       ? 'bg-amber-500'
@@ -712,7 +712,7 @@ export default function IoTSimulator() {
                     const val = Number(e.target.value);
                     setSoilMoisture(val);
                     const currentRisk = calculateRiskScore(val, vibration);
-                    if (currentRisk >= 75 && isSocketConnected) {
+                    if (currentRisk >= 85 && isSocketConnected) {
                       triggerBuzzer(1400);
                     }
                   }}
@@ -740,7 +740,7 @@ export default function IoTSimulator() {
                     const val = Number(e.target.value);
                     setVibration(val);
                     const currentRisk = calculateRiskScore(soilMoisture, val);
-                    if (currentRisk >= 75 && isSocketConnected) {
+                    if (currentRisk >= 85 && isSocketConnected) {
                       triggerBuzzer(1400);
                     }
                   }}

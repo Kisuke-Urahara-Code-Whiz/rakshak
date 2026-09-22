@@ -6,8 +6,9 @@ import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
 export function useTelemetry() {
-  const { phoneNumber, location, setLocation, language, setLanguage } = useAppStore();
+  const { phoneNumber, employeeId, location, setLocation, language, setLanguage } = useAppStore();
   const [locating, setLocating] = useState(false);
+  const activeIdentifier = phoneNumber || employeeId || null;
 
   // Keep i18n updated with current persisted language
   i18n.setLanguage(language);
@@ -42,12 +43,12 @@ export function useTelemetry() {
   }
 
   async function triggerHeartbeat() {
-    if (!phoneNumber) return;
+    if (!activeIdentifier) return;
     const coords = await fetchFreshCoordinates();
     if (!coords) return;
     try {
       const { lastUpdatedAt } = getFormattedDateTime();
-      const res = await sendHeartbeat(phoneNumber, coords.latitude, coords.longitude, lastUpdatedAt);
+      const res = await sendHeartbeat(activeIdentifier, coords.latitude, coords.longitude, lastUpdatedAt);
       
       // Keep local language synced if backend returns an updated preference
       if (res.data && typeof res.data === 'string') {
@@ -66,11 +67,11 @@ export function useTelemetry() {
     if (!location) fetchFreshCoordinates();
     const timer = setInterval(triggerHeartbeat, 5 * 60 * 1000);
     return () => clearInterval(timer);
-  }, [phoneNumber]);
+  }, [activeIdentifier]);
 
   const handleManualGpsRefresh = async () => {
-    if (!phoneNumber) {
-      Alert.alert('Error', 'No authenticated phone number found.');
+    if (!activeIdentifier) {
+      Alert.alert('Error', 'No authenticated identifier found.');
       return;
     }
 
@@ -83,7 +84,7 @@ export function useTelemetry() {
     try {
       const { lastUpdatedAt } = getFormattedDateTime();
       const res = await sendHeartbeat(
-        phoneNumber,
+        activeIdentifier,
         location.latitude,
         location.longitude,
         lastUpdatedAt

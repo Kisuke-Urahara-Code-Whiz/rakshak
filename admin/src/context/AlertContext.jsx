@@ -157,6 +157,17 @@ export function AlertProvider({ children }) {
   const pythonWsBase = (ENV.PYTHON_WS_URL || 'ws://localhost:8000').replace(/\/+$/, '');
   const pythonAlertWsUrl = `${pythonWsBase}/ws/front/front_alerts`;
 
+  // Clear / Dismiss active alert
+  const dismissAlert = useCallback(() => {
+    setActiveAlert(null);
+    clearHazardOverrides();
+    try {
+      localStorage.removeItem('active_alert_kiosk');
+    } catch {}
+    audioAlertService.stopAlert();
+    window.dispatchEvent(new Event('kioskAlertChanged'));
+  }, []);
+
   // Autonomous critical alert trigger directly from Python telemetry stream
   const triggerCriticalRiskAlert = useCallback(
     (score, data = {}) => {
@@ -263,9 +274,14 @@ export function AlertProvider({ children }) {
           const score = Math.max(0, Math.min(100, Math.round(rawRisk)));
           setLiveRiskPercentage(score);
 
-          // WHEN THE THRESHOLD OF RISK IS CROSSED (>= 75%), ALERT IS TRIGGERED!
-          if (score >= 75) {
+          // WHEN THE THRESHOLD OF RISK IS CROSSED (>= 85%), ALERT IS TRIGGERED!
+          if (score >= 85) {
             triggerCriticalRiskAlert(score, data);
+          } else if (score < 85 && (rawSoil === null || rawSoil >= 200)) {
+            // When risk drops below 85% and soil stabilizes, clear autonomous alert
+            if (activeAlert && (activeAlert.isAutonomous || activeAlert.id?.startsWith('ALERT-UNAKOTI'))) {
+              dismissAlert();
+            }
           }
         }
         return;
@@ -292,17 +308,6 @@ export function AlertProvider({ children }) {
     },
     [handleAlertEvent]
   );
-
-  // Clear / Dismiss active alert
-  const dismissAlert = useCallback(() => {
-    setActiveAlert(null);
-    clearHazardOverrides();
-    try {
-      localStorage.removeItem('active_alert_kiosk');
-    } catch {}
-    audioAlertService.stopAlert();
-    window.dispatchEvent(new Event('kioskAlertChanged'));
-  }, []);
 
   // Mute / Unmute audio
   const toggleMute = useCallback(() => {

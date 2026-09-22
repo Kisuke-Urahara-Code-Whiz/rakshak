@@ -1,5 +1,4 @@
 import { useAppStore } from '@/stores/useAppStore';
-import { API_BASE_URL } from '@/configs/env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { StatusBar, Text, TouchableOpacity, View, ScrollView } from 'react-native';
@@ -73,12 +72,6 @@ export default function SettingsScreen() {
             <Text className="text-xs font-black text-[#1a1a1a] uppercase tracking-wider mb-2">
               Telemetry Server Configuration
             </Text>
-            <View className="bg-[#f8f9fa] p-3 border border-[#e2e8f0] mb-2">
-              <Text className="text-[10px] text-slate-500 font-bold uppercase">Gateway API Base</Text>
-              <Text className="text-xs font-mono font-bold text-slate-800 mt-0.5" numberOfLines={1}>
-                {API_BASE_URL}
-              </Text>
-            </View>
             <View className="flex-row justify-between items-center py-2 border-b border-[#f1f5f9]">
               <Text className="text-xs font-bold text-slate-600">Active Regional Dialect</Text>
               <View className="bg-[#1a1a1a] px-2 py-0.5">

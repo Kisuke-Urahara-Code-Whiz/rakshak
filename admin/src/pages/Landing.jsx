@@ -79,7 +79,6 @@ export default function Landing() {
         <nav className="hidden md:flex gap-8">
           <a href="#about" className="text-sm font-bold uppercase tracking-wider hover:text-[#d93850]">About System</a>
           <a href="#coverage" className="text-sm font-bold uppercase tracking-wider hover:text-[#d93850]">Coverage</a>
-          <Link to="/app/risk-map" className="text-sm font-bold uppercase tracking-wider hover:text-[#d93850]">Public Map</Link>
         </nav>
       </header>
 

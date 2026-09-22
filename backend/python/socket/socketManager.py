@@ -32,7 +32,7 @@ def tel(realsoil: float, vibration: float,riskPercentage: float):
     risk_pct = riskPercentage
     sms_logs = []
 
-    if risk_pct > 50 or realsoil < 200:
+    if risk_pct >= 85 or realsoil < 200:
         timestamp = datetime.now().strftime("%H:%M:%S")
         sms_logs = [
         {

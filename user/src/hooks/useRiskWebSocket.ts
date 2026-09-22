@@ -26,7 +26,7 @@ function getPythonSocketUrl(clientId: string): string {
 }
 
 export function useRiskWebSocket() {
-  const { phoneNumber, setRiskScore } = useAppStore();
+  const { phoneNumber, employeeId, setRiskScore } = useAppStore();
   const clientRef = useRef<Client | null>(null);
   const pythonSocketRef = useRef<WebSocket | null>(null);
   const lastEscalatedRef = useRef<number>(0);
@@ -39,8 +39,8 @@ export function useRiskWebSocket() {
       console.log(`[${source}] Broadcaster updating risk score: ${clampedScore}%`);
       setRiskScore(clampedScore);
 
-      // Requirement 4: When risk score is critical (>= 75%), drop an alert in /room/alert
-      if (clampedScore >= 75) {
+      // When risk score is critical (>= 85%), drop an alert in /room/alert
+      if (clampedScore >= 85) {
         const now = Date.now();
         if (now - lastEscalatedRef.current > 60000) {
           lastEscalatedRef.current = now;
@@ -54,8 +54,8 @@ export function useRiskWebSocket() {
             message: `CRITICAL TACTICAL ALERT: Severe landslide risk (${clampedScore}%) detected by IoT telemetry for Unakoti, Tripura (Node 85). Evacuation protocol active.`,
             kioskId: 'KIO-TR-085',
             kioskName: 'Unakoti ADM5-Node 85',
-            employeeId: 'IOT-UNAKOTI-085',
-            role: 'IoT Automated Station',
+            employeeId: employeeId || 'IOT-UNAKOTI-085',
+            role: 'Official Tactical Field Command',
           }).catch((err) => {
             console.warn('[useRiskWebSocket] escalateOfficialAlert failed:', err?.message || err);
           });
@@ -65,9 +65,10 @@ export function useRiskWebSocket() {
   };
 
   useEffect(() => {
-    if (!phoneNumber) return;
+    const activeIdentifier = (phoneNumber ? phoneNumber.replace(/\D/g, '') : '') || employeeId;
+    if (!activeIdentifier) return;
 
-    const clientId = `user_${phoneNumber.replace(/\D/g, '') || 'app'}`;
+    const clientId = `user_${activeIdentifier}`;
 
     // 1. Connect directly to Python FastAPI WebSocket (/ws/front/{client_id})
     const pythonWsUrl = getPythonSocketUrl(clientId);
@@ -144,7 +145,7 @@ export function useRiskWebSocket() {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       connectHeaders: {
-        number: phoneNumber,
+        number: activeIdentifier,
       },
 
       onConnect: (frame) => {
@@ -190,5 +191,5 @@ export function useRiskWebSocket() {
         client.deactivate();
       }
     };
-  }, [phoneNumber, setRiskScore]);
+  }, [phoneNumber, employeeId, setRiskScore]);
 }

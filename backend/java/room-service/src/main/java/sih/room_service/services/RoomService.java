@@ -29,10 +29,10 @@ public class RoomService {
         messagingTemplate.convertAndSend(BROADCAST_TOPIC, payload);
         log.info("Broadcasted risk value [{}] to topic {}", riskValue, BROADCAST_TOPIC);
 
-        // If risk is critical (>= 75%), automatically trigger official escalation alert for Unakoti ADM5-Node 85
+        // If risk is critical (>= 85%), automatically trigger official escalation alert for Unakoti ADM5-Node 85
         try {
             double riskNum = Double.parseDouble(riskValue);
-            if (riskNum >= 75.0) {
+            if (riskNum >= 85.0) {
                 long now = System.currentTimeMillis();
                 long last = LAST_AUTO_ALERT_TIME.get();
                 if (now - last > 60_000L && LAST_AUTO_ALERT_TIME.compareAndSet(last, now)) {

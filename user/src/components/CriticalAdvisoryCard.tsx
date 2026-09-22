@@ -1,3 +1,4 @@
+import { UNAKOTI_EMERGENCY_FACILITIES } from '@/data/emergencyFacilities';
 import { i18n } from '@/services/i18n';
 import { useAppStore } from '@/stores/useAppStore';
 import { Text, View } from 'react-native';
@@ -10,7 +11,7 @@ export function CriticalAdvisoryCard({ riskScore }: CriticalAdvisoryCardProps) {
   const language = useAppStore((state) => state.language);
   i18n.setLanguage(language);
 
-  if (riskScore < 70) return null;
+  if (riskScore < 85) return null;
 
   return (
     <View className="bg-white border border-[#d93850] border-l-8 border-l-[#d93850] p-4 mb-4 shadow-md">
@@ -69,6 +70,69 @@ export function CriticalAdvisoryCard({ riskScore }: CriticalAdvisoryCardProps) {
               {i18n.t('directive_step_3')}
             </Text>
           </View>
+        </View>
+      </View>
+
+      {/* Nearest Shelters, Rescue Camps & Hospitals (Hardcoded around Unakoti) */}
+      <View className="mt-4 pt-3 border-t border-[#e0e0e0]">
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center gap-1.5">
+            <Text className="text-xs">🏥</Text>
+            <Text className="text-[#1a1a1a] text-[10px] font-black uppercase tracking-wider">
+              Nearest Shelters & Hospitals (Unakoti)
+            </Text>
+          </View>
+          <View className="bg-red-50 border border-red-200 px-1.5 py-0.2">
+            <Text className="text-[#d93850] text-[8px] font-black uppercase">
+              Evacuation Ready
+            </Text>
+          </View>
+        </View>
+
+        <View className="gap-2">
+          {UNAKOTI_EMERGENCY_FACILITIES.map((fac) => (
+            <View
+              key={fac.id}
+              className="bg-[#f8fafc] border border-[#cbd5e1] p-2.5"
+            >
+              <View className="flex-row items-center justify-between mb-1">
+                <View className="flex-row items-center gap-1.5 flex-1 pr-1">
+                  <View className={`${fac.badgeBg} px-1.5 py-0.2`}>
+                    <Text className="text-white text-[8px] font-black uppercase font-mono">
+                      {fac.typeLabel}
+                    </Text>
+                  </View>
+                  <Text
+                    className="text-xs font-black text-slate-900 flex-1 uppercase"
+                    numberOfLines={1}
+                  >
+                    {fac.name}
+                  </Text>
+                </View>
+                <View className="bg-[#1a1a1a] px-1.5 py-0.5">
+                  <Text className="text-[#f6d274] text-[9px] font-mono font-black">
+                    {fac.distanceKm} KM
+                  </Text>
+                </View>
+              </View>
+
+              <Text className="text-[10px] text-slate-600 font-bold">
+                📍 {fac.address}
+              </Text>
+              <Text className="text-[10px] text-slate-500 font-mono mt-0.5">
+                ⚡ {fac.capacity}
+              </Text>
+
+              <View className="mt-1.5 pt-1.5 border-t border-slate-200 flex-row items-center justify-between">
+                <Text className={`text-[9px] font-black uppercase ${fac.statusColor}`}>
+                  ● {fac.status}
+                </Text>
+                <Text className="text-[9px] font-mono font-black text-slate-700 bg-white px-1.5 py-0.5 border border-slate-200">
+                  ☎ {fac.contact}
+                </Text>
+              </View>
+            </View>
+          ))}
         </View>
       </View>
 

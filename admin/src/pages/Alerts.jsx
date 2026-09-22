@@ -192,7 +192,7 @@ export default function Alerts() {
               </span>
               <div className="flex items-baseline gap-2.5 my-2">
                 <span className={`text-5xl font-black font-mono tracking-tight ${
-                  liveRiskPercentage !== null && liveRiskPercentage >= 75
+                  liveRiskPercentage !== null && liveRiskPercentage >= 85
                     ? 'text-[#d93850]'
                     : liveRiskPercentage !== null && liveRiskPercentage >= 50
                     ? 'text-amber-500'
@@ -201,13 +201,13 @@ export default function Alerts() {
                   {liveRiskPercentage !== null ? `${liveRiskPercentage}%` : '15%'}
                 </span>
                 <span className={`text-xs font-black uppercase px-2.5 py-0.5 rounded font-mono border ${
-                  liveRiskPercentage !== null && liveRiskPercentage >= 75
+                  liveRiskPercentage !== null && liveRiskPercentage >= 85
                     ? 'bg-rose-50 border-rose-300 text-rose-700'
                     : liveRiskPercentage !== null && liveRiskPercentage >= 50
                     ? 'bg-amber-50 border-amber-300 text-amber-700'
                     : 'bg-emerald-50 border-emerald-300 text-emerald-700'
                 }`}>
-                  {liveRiskPercentage !== null && liveRiskPercentage >= 75
+                  {liveRiskPercentage !== null && liveRiskPercentage >= 85
                     ? 'CRITICAL HAZARD'
                     : liveRiskPercentage !== null && liveRiskPercentage >= 50
                     ? 'ELEVATED CAUTION'
@@ -215,11 +215,11 @@ export default function Alerts() {
                 </span>
               </div>
 
-              {/* Progress Bar towards 75% threshold */}
+              {/* Progress Bar towards 85% threshold */}
               <div className="w-full h-2 bg-slate-200 overflow-hidden rounded-full mb-2.5">
                 <div
                   className={`h-full transition-all duration-300 ${
-                    liveRiskPercentage !== null && liveRiskPercentage >= 75
+                    liveRiskPercentage !== null && liveRiskPercentage >= 85
                       ? 'bg-rose-600'
                       : liveRiskPercentage !== null && liveRiskPercentage >= 50
                       ? 'bg-amber-500'
@@ -241,21 +241,21 @@ export default function Alerts() {
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Trigger Threshold:</span>
-                  <span className="text-rose-600 font-black">≥ 75% Risk</span>
+                  <span className="text-rose-600 font-black">≥ 85% Risk</span>
                 </div>
               </div>
             </div>
 
             <p className="text-xs text-[#666666] leading-relaxed w-full mb-3.5 px-2">
-              Receiving live risk percentage directly from the Python socket server. When risk crosses the critical threshold (≥ 75%), emergency acoustic sirens and automated incident dispatches trigger immediately.
+              Receiving live risk percentage directly from the Python socket server. When risk crosses the critical threshold (≥ 85%), emergency acoustic sirens and automated incident dispatches trigger immediately.
             </p>
 
-            {/* Network & Endpoint Details with proper wrapping */}
+            {/* Telemetry Channel Status */}
             <div className="p-3 bg-[#f8fafc] border border-[#e2e8f0] w-full text-left font-mono text-[11px] text-slate-600 space-y-1.5 mb-3.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1.5 border-b border-slate-200">
-                <span className="font-bold text-slate-400 shrink-0 uppercase">ENDPOINT:</span>
-                <span className="text-slate-800 font-bold break-all text-[10.5px] sm:text-right" title={wsUrl}>
-                  {wsUrl}
+                <span className="font-bold text-slate-400 shrink-0 uppercase">TELEMETRY LINK:</span>
+                <span className="text-emerald-700 font-bold text-[10.5px] sm:text-right">
+                  ACTIVE IN-SITU GEO-MESH (DIRECT BUS)
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-0.5">

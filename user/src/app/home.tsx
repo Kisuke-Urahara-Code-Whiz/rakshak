@@ -342,7 +342,7 @@ export default function HomeScreen() {
         {/* Dynamic Threat Vulnerability Index */}
         <VulnerabilityCard riskScore={effectiveRisk} />
 
-        {/* Critical Emergency Advisory (Active when riskScore >= 70) */}
+        {/* Critical Emergency Advisory (Active when riskScore >= 85) */}
         <CriticalAdvisoryCard riskScore={effectiveRisk} />
 
         {/* Sensor & GPS Telemetry */}
