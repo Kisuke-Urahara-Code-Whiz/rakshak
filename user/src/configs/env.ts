@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-const DEFAULT_NGROK_HOST = '7706-152-58-181-7.ngrok-free.app';
+const DEFAULT_NGROK_HOST = 'foil-unripe-blip.ngrok-free.dev';
 
 export const NGROK_HOST: string =
   Constants.expoConfig?.extra?.ngrokHost ??
@@ -27,7 +27,7 @@ const configuredApiUrl =
 
 export const API_BASE_URL: string =
   configuredApiUrl ||
-  (NGROK_HOST ? `https://${NGROK_HOST}` : `http://${LOCAL_GATEWAY}`);
+  (NGROK_HOST ? `https://${NGROK_HOST}` : `https://${LOCAL_GATEWAY}`);
 
 const configuredWsUrl =
   Constants.expoConfig?.extra?.wsUrl ||
@@ -39,7 +39,7 @@ export const WS_BASE_URL: string =
     ? 'ws://localhost:5001'
     : NGROK_HOST
     ? `wss://${NGROK_HOST}`
-    : `ws://${LOCAL_GATEWAY}`);
+    : `wss://${LOCAL_GATEWAY}`);
 
 export const PYTHON_WS_HOST: string =
   Constants.expoConfig?.extra?.pythonWsHost ||
@@ -49,6 +49,6 @@ export const PYTHON_WS_HOST: string =
 export const PYTHON_WS_URL: string =
   Constants.expoConfig?.extra?.pythonWsUrl ||
   process.env.EXPO_PUBLIC_PYTHON_WS_URL ||
-  `ws://${PYTHON_WS_HOST}`;
+  `wss://${PYTHON_WS_HOST}`;
 
 
