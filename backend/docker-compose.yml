@@ -273,6 +273,20 @@ services:
     networks:
       - sih-network
 
+  socket-service:
+    image: socket-service
+    container_name: socket-service
+    build: ./python/socket-service
+
+    ports:
+      - "8000:8000"
+
+    restart: unless-stopped
+
+
+    networks:
+      - sih-network
+
 networks:
   sih-network:
     driver: bridge

@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+py-eureka-client
+stomp.py
+websocket-client
+requests
+websockets
