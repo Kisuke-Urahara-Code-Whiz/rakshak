@@ -46,75 +46,79 @@ export default function SelectLanguageScreen() {
         </Text>
       </View>
 
-      <View className="p-5 flex-1 justify-between">
-        <View>
-          <Text className="text-xs font-bold uppercase text-[#666666] tracking-wider mb-4">
-            Available North-Eastern Regional Languages
-          </Text>
+      <View className="flex-1 px-5 pt-4">
+        <Text className="text-xs font-bold uppercase text-[#666666] tracking-wider mb-3">
+          Available North-Eastern Regional Languages
+        </Text>
 
-          <FlatList
-            data={availableLanguages}
-            keyExtractor={(item) => item.code}
-            renderItem={({ item }) => {
-              const isSelected = selectedLang === item.code;
-              return (
-                <TouchableOpacity
-                  onPress={() => setSelectedLang(item.code as SupportedLanguage)}
-                  className={`p-3.5 border mb-2.5 flex-row items-center justify-between ${
-                    isSelected
-                      ? 'bg-red-50 border-[#d93850]'
-                      : 'bg-white border-[#e0e0e0]'
-                  }`}
-                  activeOpacity={0.8}
-                >
-                  <View>
-                    <Text
-                      className={`text-sm font-black ${
-                        isSelected ? 'text-[#d93850]' : 'text-[#1a1a1a]'
-                      }`}
-                    >
-                      {item.nativeName}
-                    </Text>
-                    <Text
-                      className={`text-[11px] font-bold uppercase tracking-wider mt-0.5 ${
-                        isSelected ? 'text-[#d93850]' : 'text-slate-500'
-                      }`}
-                    >
-                      {item.name}
-                    </Text>
-                  </View>
-                  <View
-                    className={`px-2 py-0.5 border ${
-                      isSelected ? 'border-[#d93850] bg-white' : 'border-[#e0e0e0] bg-[#f4f6f8]'
+        <FlatList
+          data={availableLanguages}
+          className="flex-1"
+          showsVerticalScrollIndicator={true}
+          contentContainerStyle={{ paddingBottom: 16 }}
+          keyExtractor={(item) => item.code}
+          renderItem={({ item }) => {
+            const isSelected = selectedLang === item.code;
+            return (
+              <TouchableOpacity
+                onPress={() => setSelectedLang(item.code as SupportedLanguage)}
+                className={`p-3.5 border mb-2.5 flex-row items-center justify-between ${
+                  isSelected
+                    ? 'bg-red-50 border-[#d93850]'
+                    : 'bg-white border-[#e0e0e0]'
+                }`}
+                activeOpacity={0.8}
+              >
+                <View>
+                  <Text
+                    className={`text-sm font-black ${
+                      isSelected ? 'text-[#d93850]' : 'text-[#1a1a1a]'
                     }`}
                   >
-                    <Text
-                      className={`font-mono text-[10px] uppercase font-bold ${
-                        isSelected ? 'text-[#d93850]' : 'text-slate-500'
-                      }`}
-                    >
-                      {item.code.toUpperCase()}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            }}
-          />
-        </View>
+                    {item.nativeName}
+                  </Text>
+                  <Text
+                    className={`text-[11px] font-bold uppercase tracking-wider mt-0.5 ${
+                      isSelected ? 'text-[#d93850]' : 'text-slate-500'
+                    }`}
+                  >
+                    {item.name}
+                  </Text>
+                </View>
+                <View
+                  className={`px-2 py-0.5 border ${
+                    isSelected ? 'border-[#d93850] bg-white' : 'border-[#e0e0e0] bg-[#f4f6f8]'
+                  }`}
+                >
+                  <Text
+                    className={`font-mono text-[10px] uppercase font-bold ${
+                      isSelected ? 'text-[#d93850]' : 'text-slate-500'
+                    }`}
+                  >
+                    {item.code.toUpperCase()}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
+        />
 
-        <TouchableOpacity
-          onPress={handleSaveLanguage}
-          disabled={isSubmitting}
-          className="w-full bg-[#333333] py-4 items-center justify-center active:bg-[#1a1a1a]"
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text className="text-white text-xs font-black uppercase tracking-widest">
-              Confirm & Continue to Dashboard
-            </Text>
-          )}
-        </TouchableOpacity>
+        {/* Pinned Bottom Confirm Action */}
+        <View className="py-3 bg-[#f4f6f8] border-t border-[#e0e0e0]">
+          <TouchableOpacity
+            onPress={handleSaveLanguage}
+            disabled={isSubmitting}
+            className="w-full bg-[#333333] py-4 items-center justify-center active:bg-[#1a1a1a] shadow-md"
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text className="text-white text-xs font-black uppercase tracking-widest">
+                Confirm & Continue to Dashboard
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );

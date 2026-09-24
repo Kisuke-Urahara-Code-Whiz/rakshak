@@ -13,6 +13,7 @@ module.exports = {
       icon: './assets/images/LogoV3.png',
     },
     android: {
+      usesCleartextTraffic: true,
       adaptiveIcon: {
         backgroundColor: '#FFFFFF',
         foregroundImage: './assets/images/LogoV3.png',

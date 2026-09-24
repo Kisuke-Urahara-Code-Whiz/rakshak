@@ -16,7 +16,6 @@ import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class MediaUploadController {
 
     private final MediaForwardingService forwardingService;

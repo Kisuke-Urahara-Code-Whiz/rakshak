@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class SMSController {
 
     private final SMSGatewayService smsGatewayService;
