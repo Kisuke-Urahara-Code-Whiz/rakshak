@@ -191,7 +191,7 @@ async def websocket_soil(websocket: WebSocket, client_id: str):
                     websocket.app.state.last_sms_alert_time = now
                     sms_url = os.getenv(
                         "SMS_SERVICE_URL",
-                        "https://foil-unripe-blip.ngrok-free.dev/sms/send-alert"
+                        "http://rakshak.tech:5001/sms/send-alert"
                     )
                     print(f"🚨 [SMS DISPATCH] 1-minute cooldown elapsed. Triggering SMS alert POST (fire-and-forget)...")
                     threading.Thread(

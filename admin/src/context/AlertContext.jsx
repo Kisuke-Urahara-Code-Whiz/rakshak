@@ -230,7 +230,6 @@ export function AlertProvider({ children }) {
     autoReconnect: true,
     reconnectInterval: ENV.WS_RECONNECT_INTERVAL,
     onOpen: () => {
-      console.log(`[AlertContext] Connected to live Python WebSocket: ${pythonAlertWsUrl}`);
       try {
         sendWsMessage(
           JSON.stringify({

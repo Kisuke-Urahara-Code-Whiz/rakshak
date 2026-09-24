@@ -25,6 +25,9 @@ export const ENV = {
   // Enable mock simulation fallback if WebSocket backend is unreachable
   ENABLE_MOCK_FALLBACK: import.meta.env.VITE_ENABLE_MOCK_FALLBACK !== 'false',
 
+  // Mobile App Download URL (Google Drive APK)
+  APP_DOWNLOAD_URL: import.meta.env.VITE_APP_DOWNLOAD_URL || 'https://drive.google.com/drive/folders/1ud-rXZlyqOfAtiYAskYIP0MYBIVTMylT',
+
   // Environment mode
   IS_DEV: import.meta.env.DEV,
   IS_PROD: import.meta.env.PROD,

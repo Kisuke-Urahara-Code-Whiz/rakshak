@@ -133,8 +133,6 @@ export async function uploadMediaEvidence(
 
   // Native Android & iOS: Use native FileSystem.uploadAsync to bypass React Native's FormData bug
   if (Platform.OS !== 'web') {
-    console.log(API_BASE_URL, 'Uploading media evidence (Native FileSystem):', fileName, 'Type:', mimeType, 'URI:', fileUri);
-
     const qStr = questionnaire
       ? typeof questionnaire === 'string'
         ? questionnaire
@@ -198,8 +196,6 @@ export async function uploadMediaEvidence(
       typeof questionnaire === 'string' ? questionnaire : JSON.stringify(questionnaire)
     );
   }
-
-  console.log(API_BASE_URL, 'Uploading media evidence (Web FormData):', fileName, 'Type:', mimeType);
 
   const res = await fetch(`${API_BASE_URL}/media/upload`, {
     method: 'POST',

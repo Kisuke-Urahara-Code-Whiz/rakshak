@@ -172,14 +172,13 @@ export default function IoTSimulator() {
     } else {
       const targetBase = ENV.IOT_WS_URL.replace(/\/$/, '');
       const url = `${targetBase}/ws/soil/${soilDeviceId}`;
-      logMessage('system', `Connecting to ${url}...`);
 
       try {
         const ws = new WebSocket(url);
 
         ws.onopen = () => {
           setSoilConnected(true);
-          logMessage('success', `Soil Socket Connected: ${soilDeviceId} (${url})`);
+          logMessage('success', `Soil Socket Connected: ${soilDeviceId}`);
         };
 
         ws.onmessage = (event) => {
@@ -187,7 +186,7 @@ export default function IoTSimulator() {
         };
 
         ws.onerror = () => {
-          logMessage('error', `Soil Socket Error connecting to ${url}`);
+          logMessage('error', `Soil Socket Error connecting: ${soilDeviceId}`);
         };
 
         ws.onclose = () => {

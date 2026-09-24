@@ -72,7 +72,6 @@ export function useRiskWebSocket() {
 
     // 1. Connect directly to Python FastAPI WebSocket (/ws/front/{client_id})
     const pythonWsUrl = getPythonSocketUrl(clientId);
-    console.log('[Python WS] Connecting to:', pythonWsUrl);
 
     try {
       const pySocket = new WebSocket(pythonWsUrl);
@@ -111,9 +110,7 @@ export function useRiskWebSocket() {
         }
       };
 
-      pySocket.onerror = (err) => {
-        console.warn('[Python WS] Socket error on:', pythonWsUrl, err);
-      };
+      pySocket.onerror = () => {};
 
       pySocket.onclose = () => {
         console.log('[Python WS] Disconnected from Python socket');
@@ -123,13 +120,8 @@ export function useRiskWebSocket() {
     }
 
     // 2. Connect to Room-Service STOMP WebSocket (/room/ws -> /topic/risk)
-    console.log('[STOMP] Connecting to:', WS_URL);
-
     const client = new Client({
-      debug: (str) => console.log('[STOMP DEBUG]', str),
-
       webSocketFactory: () => {
-        console.log('[STOMP] Creating raw WebSocket to:', WS_URL);
         const socket = new (WebSocket as any)(WS_URL, [
           'v12.stomp',
           'v11.stomp',

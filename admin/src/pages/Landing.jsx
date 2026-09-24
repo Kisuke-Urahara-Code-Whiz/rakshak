@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import ENV from '../config/env';
 
 const CAROUSEL_SLIDES = [
   {
@@ -76,9 +77,20 @@ export default function Landing() {
             <span className="text-[10px] font-bold tracking-widest text-[#666666] uppercase">NER Landslide Detection</span>
           </div>
         </div>
-        <nav className="hidden md:flex gap-8">
-          <a href="#about" className="text-sm font-bold uppercase tracking-wider hover:text-[#d93850]">About System</a>
-          <a href="#coverage" className="text-sm font-bold uppercase tracking-wider hover:text-[#d93850]">Coverage</a>
+        <nav className="flex items-center gap-6 md:gap-8">
+          <a href="#about" className="hidden md:inline-block text-sm font-bold uppercase tracking-wider hover:text-[#d93850]">About System</a>
+          <a href="#coverage" className="hidden md:inline-block text-sm font-bold uppercase tracking-wider hover:text-[#d93850]">Coverage</a>
+          <a
+            href={ENV.APP_DOWNLOAD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-2 border-[#d93850] text-[#d93850] hover:bg-[#d93850] hover:text-white px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download Our App
+          </a>
         </nav>
       </header>
 
@@ -95,13 +107,24 @@ export default function Landing() {
           <p className="max-w-xl text-lg font-medium text-[#666666] mb-10 leading-relaxed">
             Rakshak is an advanced predictive modeling and continuous monitoring system for the North Eastern Region, designed to mitigate risks from landslides, floods, and seismic events.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4">
             <Link to="/app/risk-map" className="bg-[#d93850] text-white px-8 py-4 text-sm font-bold uppercase tracking-wider hover:bg-[#be2d42] text-center shadow-lg transition-transform hover:-translate-y-1">
               Explore Risk Map
             </Link>
             <Link to="/login" className="border-2 border-[#333333] text-[#333333] px-8 py-4 text-sm font-bold uppercase tracking-wider hover:bg-[#333333] hover:text-white text-center transition-colors">
               Official Access
             </Link>
+            <a
+              href={ENV.APP_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-2 border-[#1a1a1a] bg-[#1a1a1a] text-white hover:bg-[#333333] hover:border-[#333333] px-8 py-4 text-sm font-bold uppercase tracking-wider text-center shadow-lg transition-transform hover:-translate-y-1 flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download Our App
+            </a>
           </div>
         </div>
         
