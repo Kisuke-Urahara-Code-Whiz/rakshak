@@ -157,6 +157,7 @@ export default function LoginScreen() {
         className="flex-1"
       >
         <ScrollView
+          className="flex-1"
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}
           keyboardShouldPersistTaps="handled"
         >

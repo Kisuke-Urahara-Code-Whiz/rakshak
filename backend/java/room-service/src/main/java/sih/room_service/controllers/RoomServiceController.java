@@ -16,7 +16,6 @@ import java.util.Map;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class RoomServiceController {
 
     private final RoomService roomService;

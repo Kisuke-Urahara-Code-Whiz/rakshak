@@ -19,7 +19,7 @@ const LOCAL_GATEWAY = lanHost
   ? '10.0.2.2:5001'
   : 'localhost:5001';
 
-export const CLOUD_API_URL = `https://${NGROK_HOST}`;
+export const CLOUD_API_URL = `http://${NGROK_HOST}`;
 
 const configuredApiUrl =
   Constants.expoConfig?.extra?.apiBaseUrl ||
@@ -27,7 +27,7 @@ const configuredApiUrl =
 
 export const API_BASE_URL: string =
   configuredApiUrl ||
-  (NGROK_HOST ? `https://${NGROK_HOST}` : `https://${LOCAL_GATEWAY}`);
+  (NGROK_HOST ? `http://${NGROK_HOST}` : `http://${LOCAL_GATEWAY}`);
 
 const configuredWsUrl =
   Constants.expoConfig?.extra?.wsUrl ||
@@ -38,8 +38,8 @@ export const WS_BASE_URL: string =
   (Platform.OS === 'web'
     ? 'ws://localhost:5001'
     : NGROK_HOST
-    ? `wss://${NGROK_HOST}`
-    : `wss://${LOCAL_GATEWAY}`);
+    ? `ws://${NGROK_HOST}`
+    : `ws://${LOCAL_GATEWAY}`);
 
 export const PYTHON_WS_HOST: string =
   Constants.expoConfig?.extra?.pythonWsHost ||
@@ -49,6 +49,6 @@ export const PYTHON_WS_HOST: string =
 export const PYTHON_WS_URL: string =
   Constants.expoConfig?.extra?.pythonWsUrl ||
   process.env.EXPO_PUBLIC_PYTHON_WS_URL ||
-  `wss://${PYTHON_WS_HOST}`;
+  `ws://${PYTHON_WS_HOST}`;
 
 
