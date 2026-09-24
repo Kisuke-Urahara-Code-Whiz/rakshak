@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Map as MapLibreMap, Marker } from 'maplibre-gl';
+import { Map as MapLibreMap, Marker, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   PARAMETER_TYPES,
@@ -23,6 +23,8 @@ import MapLegend from '../components/riskmap/MapLegend';
 import RegionDetailsDialog from '../components/riskmap/RegionDetailsDialog';
 
 import { useAlert } from '../context/AlertContext';
+
+setWorkerUrl('https://unpkg.com/maplibre-gl@6.6.0/dist/maplibre-gl-worker.mjs');
 
 // Helper to construct a GeoJSON FeatureCollection from kiosk data
 function buildKioskGeoJson(kiosks = []) {
@@ -301,7 +303,7 @@ export default function RiskMap() {
             speed: 1.4,
             essential: true,
           });
-        } catch {}
+        } catch { }
       }
     } else if (!activeAlert && alertMarkerRef.current) {
       alertMarkerRef.current.remove();
@@ -743,7 +745,7 @@ export default function RiskMap() {
             localStorage.removeItem('active_alert_kiosk');
           }
         }
-      } catch {}
+      } catch { }
 
       const params = new URLSearchParams(location.search);
       const urlLat = parseFloat(params.get('lat'));
