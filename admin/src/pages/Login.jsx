@@ -3,8 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import ENV from "../config/env";
 
 export default function Login() {
-  const [role, setRole] = useState("Citizen");
-  const [employeeUid, setEmployeeUid] = useState("");
+  const [role, setRole] = useState("MDoNER Employee");
+  const [employeeUid, setEmployeeUid] = useState("EMP-NER-001");
   const [citizenPhone, setCitizenPhone] = useState("9832041182");
   const [password, setPassword] = useState("admin");
   const [error, setError] = useState("");
